@@ -6,7 +6,7 @@ const slides = [
   {
     id: 1,
     image: '/slider_image1.jpg',
-    unsplashFallback: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1800&q=80',
+    unsplashFallback: '/slider_image1.jpg',
     alt: 'Forest Hills Resort',
     title: 'The Forest Hills Resort',
     subtitle: 'Luxury Amidst Nature in Udaipur',
@@ -14,7 +14,7 @@ const slides = [
   {
     id: 2,
     image: '/slider_image2.jpg',
-    unsplashFallback: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1800&q=80',
+    unsplashFallback: '/slider_image2.jpg',
     alt: 'Luxury Rooms',
     title: 'Luxury Accommodations',
     subtitle: 'Elegant rooms with stunning views'
