@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 const slides = [
   {
     id: 1,
-    image: '/slider_image1.jpg',
-    unsplashFallback: '/slider_image1.jpg',
+    image: '/slider_image1.JPG',
+    unsplashFallback: '/slider_image1.JPG',
     alt: 'Forest Hills Resort',
     title: 'The Forest Hills Resort',
     subtitle: 'Luxury Amidst Nature in Udaipur',
@@ -14,8 +14,8 @@ const slides = [
   },
   {
     id: 2,
-    image: '/slider_image2.jpg',
-    unsplashFallback: '/slider_image2.jpg',
+    image: '/slider_image2.JPG',
+    unsplashFallback: '/slider_image2.JPG',
     alt: 'Luxury Rooms',
     title: 'Luxury Accommodations',
     subtitle: 'Elegant rooms with stunning views',
