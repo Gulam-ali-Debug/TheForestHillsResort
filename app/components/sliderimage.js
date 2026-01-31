@@ -1,25 +1,27 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 
+
 const slides = [
   {
     id: 1,
-    image: '/slider_image1.jpg',
-    unsplashFallback: '/slider_image1.jpg',
+    image: 'https://images.unsplash.com/photo-1769879455504-45f4b93131f5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    unsplashFallback: 'https://images.unsplash.com/photo-1769879455504-45f4b93131f5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Forest Hills Resort',
     title: 'The Forest Hills Resort',
     subtitle: 'Luxury Amidst Nature in Udaipur',
-    isLocal: true,
+    isLocal: false,
   },
   {
     id: 2,
-    image: '/slider_image2.jpg',
-    unsplashFallback: '/slider_image2.jpg',
+    image: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    unsplashFallback: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Luxury Rooms',
     title: 'Luxury Accommodations',
     subtitle: 'Elegant rooms with stunning views',
-    isLocal: true,
+    isLocal: false,
   },
   {
     id: 3,
