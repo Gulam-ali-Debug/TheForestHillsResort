@@ -1,9 +1,14 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ReviewSection = () => {
     const [currentReview, setCurrentReview] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [dragDistance, setDragDistance] = useState(0);
+    const containerRef = useRef(null);
+    const autoSlideRef = useRef(null);
 
     const reviews = [
         {
@@ -55,6 +60,121 @@ const ReviewSection = () => {
         setCurrentReview((prev) => (prev - 1 + reviews.length) % reviews.length);
     };
 
+    // Auto-slide every 5 seconds
+    useEffect(() => {
+        autoSlideRef.current = setInterval(() => {
+            nextReview();
+        }, 5000);
+
+        return () => {
+            if (autoSlideRef.current) {
+                clearInterval(autoSlideRef.current);
+            }
+        };
+    }, []);
+
+    // Pause auto-slide on hover/drag
+    const pauseAutoSlide = () => {
+        if (autoSlideRef.current) {
+            clearInterval(autoSlideRef.current);
+        }
+    };
+
+    const resumeAutoSlide = () => {
+        if (autoSlideRef.current) {
+            clearInterval(autoSlideRef.current);
+        }
+        autoSlideRef.current = setInterval(() => {
+            nextReview();
+        }, 5000);
+    };
+
+    // Touch and mouse drag handlers
+    const handleDragStart = (e) => {
+        // Only start dragging if it's a horizontal swipe on the slider
+        setIsDragging(true);
+        pauseAutoSlide();
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        setStartX({ x: clientX, y: clientY });
+        setDragDistance(0);
+    };
+
+    const handleDragMove = (e) => {
+        if (!isDragging) return;
+        
+        e.preventDefault();
+        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        const distanceX = clientX - startX.x;
+        const distanceY = clientY - startX.y;
+        
+        // Only set drag distance for horizontal movement
+        // If vertical movement is significant, it's probably a scroll attempt
+        const isHorizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY);
+        
+        if (isHorizontalSwipe) {
+            setDragDistance(distanceX);
+        } else {
+            // If it's vertical movement, cancel dragging to allow scrolling
+            setIsDragging(false);
+            setDragDistance(0);
+        }
+    };
+
+    const handleDragEnd = () => {
+        if (!isDragging) return;
+        
+        setIsDragging(false);
+        const threshold = 50;
+        
+        if (Math.abs(dragDistance) > threshold) {
+            if (dragDistance > 0) {
+                prevReview();
+            } else {
+                nextReview();
+            }
+        }
+        
+        setDragDistance(0);
+        setTimeout(resumeAutoSlide, 3000); // Resume after 3 seconds
+    };
+
+    // Add event listeners for drag
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const options = { passive: false };
+        
+        // Store references to functions for cleanup
+        const handleStart = (e) => handleDragStart(e);
+        const handleMove = (e) => handleDragMove(e);
+        const handleEnd = () => handleDragEnd();
+        
+        container.addEventListener('mousedown', handleStart, options);
+        container.addEventListener('mousemove', handleMove, options);
+        container.addEventListener('mouseup', handleEnd, options);
+        container.addEventListener('mouseleave', handleEnd, options);
+        
+        container.addEventListener('touchstart', handleStart, options);
+        container.addEventListener('touchmove', handleMove, options);
+        container.addEventListener('touchend', handleEnd, options);
+        container.addEventListener('touchcancel', handleEnd, options);
+
+        return () => {
+            container.removeEventListener('mousedown', handleStart);
+            container.removeEventListener('mousemove', handleMove);
+            container.removeEventListener('mouseup', handleEnd);
+            container.removeEventListener('mouseleave', handleEnd);
+            
+            container.removeEventListener('touchstart', handleStart);
+            container.removeEventListener('touchmove', handleMove);
+            container.removeEventListener('touchend', handleEnd);
+            container.removeEventListener('touchcancel', handleEnd);
+        };
+    }, [isDragging, dragDistance, startX]);
+
     const renderStars = (rating) => {
         return (
             <div className="flex gap-1">
@@ -91,7 +211,16 @@ const ReviewSection = () => {
                     </div>
 
                     {/* Current Review Display */}
-                    <div className="relative rounded-xl overflow-hidden shadow-2xl mb-16 border border-gray-800">
+                    <div 
+                        className="relative rounded-xl overflow-hidden shadow-2xl mb-16 border border-gray-800"
+                        ref={containerRef}
+                        style={{ 
+                            cursor: isDragging ? 'grabbing' : 'grab',
+                            touchAction: 'pan-y pinch-zoom' // Allow vertical scrolling
+                        }}
+                        onMouseEnter={pauseAutoSlide}
+                        onMouseLeave={resumeAutoSlide}
+                    >
                         {/* Background Images - Brighter for dark theme */}
                         <div className="absolute inset-0">
                             {blurImages.map((image, index) => (
@@ -103,7 +232,9 @@ const ReviewSection = () => {
                                         backgroundImage: `url(${image.url})`,
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
-                                        filter: 'brightness(0.7) contrast(1.1)'
+                                        filter: 'brightness(0.7) contrast(1.1)',
+                                        transform: `translateX(${isDragging ? dragDistance : 0}px)`,
+                                        transition: isDragging ? 'none' : 'opacity 1000ms ease, transform 300ms ease'
                                     }}
                                 />
                             ))}
@@ -113,19 +244,19 @@ const ReviewSection = () => {
                         
                         {/* Review Content */}
                         <div className="relative z-10 p-12 md:p-16 min-h-[400px] flex flex-col justify-center">
-                            {/* Left Arrow */}
+                            {/* Left Arrow - Hidden on mobile/tablet */}
                             <button
                                 onClick={prevReview}
-                                className="absolute left-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full border border-white/20 bg-black/40 hover:bg-white/20 backdrop-blur-sm transition-all duration-300 z-20"
+                                className="absolute left-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full border border-white/20 bg-black/40 hover:bg-white/20 backdrop-blur-sm transition-all duration-300 z-20 hidden lg:block"
                                 aria-label="Previous review"
                             >
                                 <ChevronLeft size={28} className="text-white" />
                             </button>
                             
-                            {/* Right Arrow */}
+                            {/* Right Arrow - Hidden on mobile/tablet */}
                             <button
                                 onClick={nextReview}
-                                className="absolute right-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full border border-white/20 bg-black/40 hover:bg-white/20 backdrop-blur-sm transition-all duration-300 z-20"
+                                className="absolute right-8 top-1/2 transform -translate-y-1/2 p-4 rounded-full border border-white/20 bg-black/40 hover:bg-white/20 backdrop-blur-sm transition-all duration-300 z-20 hidden lg:block"
                                 aria-label="Next review"
                             >
                                 <ChevronRight size={28} className="text-white" />
@@ -168,6 +299,14 @@ const ReviewSection = () => {
                                     ))}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Swipe hint for mobile/tablet */}
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white/50 text-xs md:text-sm flex items-center gap-2 z-20 lg:hidden pointer-events-none">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                            </svg>
+                            <span>Swipe to navigate</span>
                         </div>
                     </div>
 
