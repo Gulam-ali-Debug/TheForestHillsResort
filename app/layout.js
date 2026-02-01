@@ -4,10 +4,6 @@ import TopContactBar from "./components/topcontactbar";
 import Header from "./components/header";
 import Footer from "./components/footer";
 
-
-
-
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,14 +22,17 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+      <link href="https://fonts.googleapis.com/css2?family=Festive&display=swap" rel="stylesheet" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        
-        <TopContactBar/ >
-        <Header/ >
-      {children}
-      <Footer/ >
+        <Header />
+        {children}
+        <Footer />
       </body>
     </html>
   );
