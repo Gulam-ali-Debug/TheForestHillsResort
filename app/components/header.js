@@ -11,10 +11,15 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-black/87 backdrop-blur-sm shadow-lg">
+    // Set header transparency on all device sizes (not just desktop) & increase transparency on both sides
+    <header className="fixed top-0 left-0 right-0 z-50 w-full bg-black/60 backdrop-blur-md shadow-lg">
       <div className="container mx-auto px-4">
+        {/* Decorative overlays for increased transparency left/right */}
+        <div className="absolute inset-y-0 left-0 w-1/3 pointer-events-none z-[-1] bg-gradient-to-r from-black/30 via-transparent to-transparent"></div>
+        <div className="absolute inset-y-0 right-0 w-1/3 pointer-events-none z-[-1] bg-gradient-to-l from-black/30 via-transparent to-transparent"></div>
+        
         {/* Main Header Content - Increased Height */}
-        <div className="flex justify-between items-center py-5">
+        <div className="flex justify-between items-center py-5 relative">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
               The Forest Hills Resort
@@ -95,11 +100,12 @@ const Header = () => {
             isMobileMenuOpen ? 'max-h-96 opacity-100 pb-3' : 'max-h-0 opacity-0'
           }`}
         >
-          <ul className="space-y-0 bg-black/95 backdrop-blur-sm rounded-b-lg shadow-lg">
+          {/* Add same transparency to the mobile menu background */}
+          <ul className="space-y-0 bg-black/60 backdrop-blur-md rounded-b-lg shadow-lg">
             <li>
               <Link
                 href="/"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Home
@@ -108,7 +114,7 @@ const Header = () => {
             <li>
               <Link
                 href="/rooms"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Rooms
@@ -117,7 +123,7 @@ const Header = () => {
             <li>
               <Link
                 href="/dining"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Dining
@@ -126,7 +132,7 @@ const Header = () => {
             <li>
               <Link
                 href="/explore-udaipur"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Explore Udaipur
@@ -135,7 +141,7 @@ const Header = () => {
             <li>
               <Link
                 href="/contact"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Contact
