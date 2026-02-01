@@ -105,7 +105,7 @@ const Header = () => {
             <li>
               <Link
                 href="/"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-white/40 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Home
@@ -114,7 +114,7 @@ const Header = () => {
             <li>
               <Link
                 href="/rooms"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-white/40 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Rooms
@@ -123,7 +123,7 @@ const Header = () => {
             <li>
               <Link
                 href="/dining"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-white/40 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Dining
@@ -132,7 +132,7 @@ const Header = () => {
             <li>
               <Link
                 href="/explore-udaipur"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/40 transition py-4 px-6 border-b border-white/40 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Explore Udaipur
