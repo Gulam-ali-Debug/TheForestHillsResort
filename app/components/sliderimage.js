@@ -1,8 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const slides = [
   {
@@ -61,6 +59,10 @@ const Slider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [localImageErrors, setLocalImageErrors] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
+  const containerRef = useRef(null);
 
   const nextSlide = useCallback(() => {
     if (isTransitioning) return;
@@ -84,11 +86,8 @@ const Slider = () => {
   }, [isTransitioning, currentSlide]);
 
   const handleImageError = useCallback((slide, e) => {
-    // If it's a local image, log a visible warning for developer!
     if (slide.isLocal) {
       setLocalImageErrors(prev => ({ ...prev, [slide.id]: true }));
-      // The following is a clear error message for devs:
-      // eslint-disable-next-line no-console
       console.error(
         `[SliderImage] LOCAL image failed to load: "${slide.image}".\n` +
         `• If you develop locally, check that "/public${slide.image}" exists and is not misspelled.\n` +
@@ -96,9 +95,7 @@ const Slider = () => {
       );
     }
 
-    // Use fallback if defined
     if (slide.unsplashFallback) {
-      // Avoid infinite error loop if fallback also fails
       if (e.target.src !== slide.unsplashFallback) {
         e.target.src = slide.unsplashFallback;
       }
@@ -106,6 +103,40 @@ const Slider = () => {
       e.target.alt = 'Failed to load image';
     }
   }, []);
+
+  // Touch and mouse drag handlers
+  const handleDragStart = (e) => {
+    setIsDragging(true);
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    setStartX(clientX);
+    setDragDistance(0);
+  };
+
+  const handleDragMove = (e) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+    const distance = clientX - startX;
+    setDragDistance(distance);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    
+    setIsDragging(false);
+    const threshold = 50;
+    
+    if (Math.abs(dragDistance) > threshold) {
+      if (dragDistance > 0) {
+        prevSlide();
+      } else {
+        nextSlide();
+      }
+    }
+    
+    setDragDistance(0);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -128,25 +159,66 @@ const Slider = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevSlide, nextSlide, goToSlide]);
 
+  // Add/remove event listeners for drag
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const options = { passive: false };
+    
+    container.addEventListener('mousedown', handleDragStart, options);
+    container.addEventListener('mousemove', handleDragMove, options);
+    container.addEventListener('mouseup', handleDragEnd, options);
+    container.addEventListener('mouseleave', handleDragEnd, options);
+    
+    container.addEventListener('touchstart', handleDragStart, options);
+    container.addEventListener('touchmove', handleDragMove, options);
+    container.addEventListener('touchend', handleDragEnd, options);
+
+    return () => {
+      container.removeEventListener('mousedown', handleDragStart);
+      container.removeEventListener('mousemove', handleDragMove);
+      container.removeEventListener('mouseup', handleDragEnd);
+      container.removeEventListener('mouseleave', handleDragEnd);
+      
+      container.removeEventListener('touchstart', handleDragStart);
+      container.removeEventListener('touchmove', handleDragMove);
+      container.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [isDragging, dragDistance, startX]);
+
   return (
-    <section className="relative h-screen overflow-hidden bg-black">
+    <section 
+      className="relative h-screen overflow-hidden bg-black"
+      ref={containerRef}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       <div 
         className="flex h-full transition-transform duration-700 ease-in-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        style={{ 
+          transform: `translateX(calc(-${currentSlide * 100}% + ${dragDistance}px))`,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
       >
         {slides.map((slide, index) => (
           <div 
             key={slide.id} 
-            className="relative min-w-full h-full"
+            className="relative min-w-full h-full select-none"
+            style={{ userSelect: 'none', pointerEvents: isDragging ? 'none' : 'auto' }}
           >
             <div className="absolute inset-0">
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-cover transition-opacity duration-1000"
+                className="w-full h-full object-cover transition-opacity duration-1000 select-none"
                 onError={(e) => handleImageError(slide, e)}
                 loading={index < 2 ? 'eager' : 'lazy'}
-                style={localImageErrors[slide.id] ? { background: '#222', color: 'red' } : undefined}
+                draggable="false"
+                style={{ 
+                  ...(localImageErrors[slide.id] ? { background: '#222', color: 'red' } : {}),
+                  userSelect: 'none',
+                  pointerEvents: 'none'
+                }}
               />
               {(localImageErrors[slide.id]) && slide.isLocal && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-red-400 font-bold text-xl z-10 pointer-events-none">
@@ -159,7 +231,6 @@ const Slider = () => {
 
             <div className="relative h-full flex flex-col justify-center items-center px-4 md:px-8 lg:px-16">
               <div className="max-w-6xl w-full text-center">
-
                 <h2 
                   className={`text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 md:mb-6 transition-all duration-1000 delay-300 ${
                     currentSlide === index 
@@ -207,10 +278,11 @@ const Slider = () => {
         ))}
       </div>
 
+      {/* Hide arrows on mobile and tablet */}
       <button
         onClick={prevSlide}
         disabled={isTransitioning}
-        className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white p-4 rounded-full transition-all duration-300 z-20 group disabled:opacity-50 disabled:cursor-not-allowed"
+        className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white p-4 rounded-full transition-all duration-300 z-20 group disabled:opacity-50 disabled:cursor-not-allowed hidden lg:block"
         aria-label="Previous slide"
       >
         <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -221,7 +293,7 @@ const Slider = () => {
       <button
         onClick={nextSlide}
         disabled={isTransitioning}
-        className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white p-4 rounded-full transition-all duration-300 z-20 group disabled:opacity-50 disabled:cursor-not-allowed"
+        className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white p-4 rounded-full transition-all duration-300 z-20 group disabled:opacity-50 disabled:cursor-not-allowed hidden lg:block"
         aria-label="Next slide"
       >
         <svg className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
