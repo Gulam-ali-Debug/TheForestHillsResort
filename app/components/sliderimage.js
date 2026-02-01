@@ -31,7 +31,7 @@ const slides = [
   },
   {
     id: 4,
-    image: 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1800&q=80',
+    image: 'https://images.unsplash.com/photo-1769974707320-1b334e3aeb8d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Fine Dining',
     title: 'Fine Dining',
     subtitle: 'Culinary experiences to remember',
