@@ -101,7 +101,7 @@ const Header = () => {
           }`}
         >
           {/* Add same transparency to the mobile menu background */}
-          <ul className="space-y-0 bg-black/60 backdrop-blur-md rounded-b-lg shadow-lg">
+          <ul className="space-y-0 bg-black/40 backdrop-blur-[30%] rounded-b-lg shadow-lg">
             <li>
               <Link
                 href="/"
