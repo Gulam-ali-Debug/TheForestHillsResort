@@ -60,9 +60,10 @@ const Slider = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [localImageErrors, setLocalImageErrors] = useState({});
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [dragDistance, setDragDistance] = useState(0);
   const containerRef = useRef(null);
+  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
 
   const nextSlide = useCallback(() => {
     if (isTransitioning) return;
@@ -107,8 +108,10 @@ const Slider = () => {
   // Touch and mouse drag handlers
   const handleDragStart = (e) => {
     setIsDragging(true);
+    setIsHorizontalSwipe(false);
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    setStartX(clientX);
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    setStartPos({ x: clientX, y: clientY });
     setDragDistance(0);
   };
 
@@ -117,14 +120,33 @@ const Slider = () => {
     
     e.preventDefault();
     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    const distance = clientX - startX;
-    setDragDistance(distance);
+    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    const distanceX = clientX - startPos.x;
+    const distanceY = clientY - startPos.y;
+    
+    // Determine if it's a horizontal swipe (for slider) or vertical swipe (for scrolling)
+    const isHorizontal = Math.abs(distanceX) > Math.abs(distanceY) * 1.5;
+    
+    if (isHorizontal) {
+      setIsHorizontalSwipe(true);
+      setDragDistance(distanceX);
+    } else {
+      // If it's vertical movement, cancel dragging to allow scrolling
+      setIsDragging(false);
+      setDragDistance(0);
+    }
   };
 
   const handleDragEnd = () => {
-    if (!isDragging) return;
+    if (!isDragging || !isHorizontalSwipe) {
+      setIsDragging(false);
+      setIsHorizontalSwipe(false);
+      setDragDistance(0);
+      return;
+    }
     
     setIsDragging(false);
+    setIsHorizontalSwipe(false);
     const threshold = 50;
     
     if (Math.abs(dragDistance) > threshold) {
@@ -166,45 +188,58 @@ const Slider = () => {
 
     const options = { passive: false };
     
-    container.addEventListener('mousedown', handleDragStart, options);
-    container.addEventListener('mousemove', handleDragMove, options);
-    container.addEventListener('mouseup', handleDragEnd, options);
-    container.addEventListener('mouseleave', handleDragEnd, options);
+    // Store references to functions for cleanup
+    const handleStart = (e) => handleDragStart(e);
+    const handleMove = (e) => handleDragMove(e);
+    const handleEnd = () => handleDragEnd();
     
-    container.addEventListener('touchstart', handleDragStart, options);
-    container.addEventListener('touchmove', handleDragMove, options);
-    container.addEventListener('touchend', handleDragEnd, options);
+    container.addEventListener('mousedown', handleStart, options);
+    container.addEventListener('mousemove', handleMove, options);
+    container.addEventListener('mouseup', handleEnd, options);
+    container.addEventListener('mouseleave', handleEnd, options);
+    
+    container.addEventListener('touchstart', handleStart, options);
+    container.addEventListener('touchmove', handleMove, options);
+    container.addEventListener('touchend', handleEnd, options);
+    container.addEventListener('touchcancel', handleEnd, options);
 
     return () => {
-      container.removeEventListener('mousedown', handleDragStart);
-      container.removeEventListener('mousemove', handleDragMove);
-      container.removeEventListener('mouseup', handleDragEnd);
-      container.removeEventListener('mouseleave', handleDragEnd);
+      container.removeEventListener('mousedown', handleStart);
+      container.removeEventListener('mousemove', handleMove);
+      container.removeEventListener('mouseup', handleEnd);
+      container.removeEventListener('mouseleave', handleEnd);
       
-      container.removeEventListener('touchstart', handleDragStart);
-      container.removeEventListener('touchmove', handleDragMove);
-      container.removeEventListener('touchend', handleDragEnd);
+      container.removeEventListener('touchstart', handleStart);
+      container.removeEventListener('touchmove', handleMove);
+      container.removeEventListener('touchend', handleEnd);
+      container.removeEventListener('touchcancel', handleEnd);
     };
-  }, [isDragging, dragDistance, startX]);
+  }, [isDragging, dragDistance, startPos, isHorizontalSwipe]);
 
   return (
     <section 
       className="relative h-screen overflow-hidden bg-black"
       ref={containerRef}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      style={{ 
+        cursor: isDragging && isHorizontalSwipe ? 'grabbing' : 'grab',
+        touchAction: 'pan-y pinch-zoom' // Allow vertical scrolling on touch devices
+      }}
     >
       <div 
         className="flex h-full transition-transform duration-700 ease-in-out"
         style={{ 
-          transform: `translateX(calc(-${currentSlide * 100}% + ${dragDistance}px))`,
-          cursor: isDragging ? 'grabbing' : 'grab'
+          transform: `translateX(calc(-${currentSlide * 100}% + ${isHorizontalSwipe ? dragDistance : 0}px))`,
+          cursor: isDragging && isHorizontalSwipe ? 'grabbing' : 'grab'
         }}
       >
         {slides.map((slide, index) => (
           <div 
             key={slide.id} 
             className="relative min-w-full h-full select-none"
-            style={{ userSelect: 'none', pointerEvents: isDragging ? 'none' : 'auto' }}
+            style={{ 
+              userSelect: 'none', 
+              pointerEvents: (isDragging && isHorizontalSwipe) ? 'none' : 'auto' 
+            }}
           >
             <div className="absolute inset-0">
               <img
