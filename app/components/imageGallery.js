@@ -114,13 +114,20 @@ const ImageGallery = () => {
     <div className="min-h-screen bg-black text-white">
       <div className="py-12 px-4 md:px-8">
         <div className="max-w-6xl mx-auto"> {/* Changed from max-w-7xl to max-w-6xl */}
-          <div className="mb-16 text-center">
-            <h2 className="text-5xl font-bold text-white mb-6 tracking-tight">OUR GALLERY</h2>
-            <div className="w-24 h-1 bg-black mx-auto mb-6"></div>
-            <p className="text-white text-lg max-w-3xl mx-auto font-light">
-              Experience the serene beauty of Forest Hills Resort through our curated collection
-            </p>
-          </div>
+        <div className="mb-16 text-center">
+                        <div className="inline-block mb-4">
+                            <div className="w-20 h-1 bg-gray-500 mb-3 mx-auto"></div>
+                            <p className="text-sm font-light tracking-[0.3em] text-gray-400 uppercase mb-2">
+                                Watch for Experience
+                            </p>
+                        </div>
+                        <h2 className="text-5xl font-light text-white mb-4">
+                            Our Gallery
+                        </h2>
+                        <p className="text-gray-400 font-light max-w-2xl mx-auto">
+                            Experience the serene beauty of Forest Hills Resort through our curated collection.
+                        </p>
+                    </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
             {/* Row 1 */}
             <div className="md:col-span-2">

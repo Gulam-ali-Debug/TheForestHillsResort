@@ -39,7 +39,7 @@ const DiningSection = () => {
       title: "LA PÂTISSERIE",
       subtitle: "FRENCH CAFÉ",
       description: "Parisian-style patisserie with artisanal pastries. Afternoon tea service and specialty coffees in a sunlit atrium.",
-      image: "https://images.unsplash.com/photo-1559620192-032c64bc86af?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80",
+      image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80", // New working image
       hours: "07:00 - 19:00",
     },
     {
@@ -47,7 +47,7 @@ const DiningSection = () => {
       title: "SPICE MARKET",
       subtitle: "INDIAN & MIDDLE EASTERN",
       description: "Vibrant flavors from across Asia. Traditional spices meet modern techniques in a contemporary colorful setting.",
-      image: "https://images.unsplash.com/photo-1585937421612-70ca003675ed?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80",
+      image: "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=600&q=80", // Updated working image
       hours: "12:00 - 22:30",
     }
   ];

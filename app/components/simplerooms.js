@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 const SimpleRoomsSection = () => {
   const [activeRoom, setActiveRoom] = useState(null);
@@ -109,9 +110,11 @@ const SimpleRoomsSection = () => {
                     </div>
                     
                     {/* Book Button */}
-                    <button className="mt-4 bg-white text-black px-6 py-3 font-bold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105">
-                      BOOK NOW
-                    </button>
+                    <Link href="/contact">
+                      <span className="mt-4 bg-white text-black px-6 py-3 font-bold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 inline-block cursor-pointer">
+                        BOOK NOW
+                      </span>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -150,7 +153,5 @@ const SimpleRoomsSection = () => {
     </section>
   );
 };
-
-
 
 export default SimpleRoomsSection;
