@@ -3,13 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-const playwriteFontStyle = {
-  fontFamily: '"Festive", cursive',
-  fontWeight: 400,
-  fontStyle: 'normal',
-  fontSize: '1.5rem'
-};
-
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -23,10 +16,10 @@ const Header = () => {
         {/* Main Header Content - Increased Height */}
         <div className="flex justify-between items-center py-5">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
               The Forest Hills Resort
             </h1>
-            <p className="text-sm md:text-base text-gray-300 mt-1">
+            <p className="text-sm md:text-base text-gray-300 mt-1 font-light">
               Udaipur's Premier Luxury Destination
             </p>
           </div>
@@ -37,8 +30,7 @@ const Header = () => {
               <li>
                 <Link
                   href="/"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
+                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1 font-light tracking-tight text-xl"
                 >
                   Home
                 </Link>
@@ -46,26 +38,15 @@ const Header = () => {
               <li>
                 <Link
                   href="/rooms"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
+                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1 font-light tracking-tight text-xl"
                 >
                   Rooms
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/amenties"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
-                >
-                  Amenities
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/dining"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
+                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1 font-light tracking-tight text-xl"
                 >
                   Dining
                 </Link>
@@ -73,8 +54,7 @@ const Header = () => {
               <li>
                 <Link
                   href="/explore-udaipur"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
+                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1 font-light tracking-tight text-xl"
                 >
                   Explore Udaipur
                 </Link>
@@ -82,8 +62,7 @@ const Header = () => {
               <li>
                 <Link
                   href="/contact"
-                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1"
-                  style={playwriteFontStyle}
+                  className="text-gray-200 hover:text-white transition border-b-2 border-transparent hover:border-white pb-1 font-light tracking-tight text-xl"
                 >
                   Contact
                 </Link>
@@ -120,8 +99,7 @@ const Header = () => {
             <li>
               <Link
                 href="/"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700"
-                style={playwriteFontStyle}
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Home
@@ -130,8 +108,7 @@ const Header = () => {
             <li>
               <Link
                 href="/rooms"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700"
-                style={playwriteFontStyle}
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Rooms
@@ -139,19 +116,8 @@ const Header = () => {
             </li>
             <li>
               <Link
-                href="/amenties"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700"
-                style={playwriteFontStyle}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Amenities
-              </Link>
-            </li>
-            <li>
-              <Link
                 href="/dining"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700"
-                style={playwriteFontStyle}
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Dining
@@ -160,8 +126,7 @@ const Header = () => {
             <li>
               <Link
                 href="/explore-udaipur"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700"
-                style={playwriteFontStyle}
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 border-b border-gray-700 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Explore Udaipur
@@ -170,8 +135,7 @@ const Header = () => {
             <li>
               <Link
                 href="/contact"
-                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6"
-                style={playwriteFontStyle}
+                className="block text-gray-200 hover:text-white hover:bg-gray-800/50 transition py-4 px-6 font-light tracking-tight leading-relaxed text-xl"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Contact
