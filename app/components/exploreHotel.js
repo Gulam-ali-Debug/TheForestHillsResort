@@ -34,7 +34,7 @@ const ExploreOurHotel = () => {
       title: "Forest Spa",
       distance: "On-site",
       description: "A luxurious spa surrounded by ancient trees. Rejuvenate with organic treatments while listening to the gentle sounds of the forest.",
-      image: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600&q=80",
+      image: "https://images.squarespace-cdn.com/content/v1/6447eeb38baf0c31deed937f/1699153897264-G6EKC24CDCT2Q02AP7YH/mens+spa.jpg",
       link: "#",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
