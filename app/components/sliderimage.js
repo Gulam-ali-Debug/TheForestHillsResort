@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 
 const slides = [
   {
@@ -297,9 +298,12 @@ const Slider = () => {
                       : 'opacity-0 translate-y-8'
                   }`}
                 >
-                  <button className="bg-white text-black px-6 md:px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                  <Link 
+                    href="/contact"
+                    className="bg-white text-black px-6 md:px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                  >
                     Book Now
-                  </button>
+                  </Link>
                   <button className="bg-transparent border-2 border-white text-white px-6 md:px-8 py-3 rounded-full font-semibold hover:bg-white/10 transition-all duration-300 transform hover:scale-105">
                     Explore More
                   </button>
