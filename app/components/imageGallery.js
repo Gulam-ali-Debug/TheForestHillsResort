@@ -6,7 +6,8 @@ const ImageGallery = () => {
   const modalRef = useRef(null);
   const contentRef = useRef(null);
   const [touchStart, setTouchStart] = useState(null);
-  const [isScrolling, setIsScrolling] = useState(false);
+  const [verticalDelta, setVerticalDelta] = useState(0);
+  const [isClosing, setIsClosing] = useState(false);
 
   const galleryImages = [
     { 
@@ -97,16 +98,17 @@ const ImageGallery = () => {
 
   const handleImageClick = (image) => {
     setSelectedImage(image);
-    // Prevent body scroll when modal opens
     document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
   };
 
   const closeModal = () => {
-    setSelectedImage(null);
-    // Re-enable body scroll when modal closes
-    document.body.style.overflow = 'auto';
-    document.body.style.touchAction = 'auto';
+    setIsClosing(true);
+    setTimeout(() => {
+      setSelectedImage(null);
+      setVerticalDelta(0);
+      setIsClosing(false);
+      document.body.style.overflow = 'auto';
+    }, 300);
   };
 
   const handleKeyDown = (e, imageId) => {
@@ -119,43 +121,36 @@ const ImageGallery = () => {
     }
   };
 
-  // Touch event handlers for modal scrolling
+  // Simple touch handlers without complex logic
   const handleTouchStart = (e) => {
     setTouchStart({
-      x: e.touches[0].clientX,
       y: e.touches[0].clientY,
-      time: Date.now()
+      x: e.touches[0].clientX,
     });
-    setIsScrolling(false);
+    setVerticalDelta(0);
   };
 
   const handleTouchMove = (e) => {
-    if (!touchStart || !contentRef.current) return;
+    if (!touchStart) return;
     
-    const touchCurrent = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY
-    };
+    const currentY = e.touches[0].clientY;
+    const currentX = e.touches[0].clientX;
+    const deltaY = currentY - touchStart.y;
+    const deltaX = currentX - touchStart.x;
     
-    const diffY = touchCurrent.y - touchStart.y;
-    const diffX = touchCurrent.x - touchStart.x;
-    
-    // Check if this is primarily vertical movement
-    if (Math.abs(diffY) > Math.abs(diffX) * 2) {
-      setIsScrolling(true);
-      
-      // Check if content is scrollable
+    // Only handle vertical swipes (more vertical than horizontal)
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
       const content = contentRef.current;
       const isAtTop = content.scrollTop === 0;
-      const isAtBottom = content.scrollHeight - content.scrollTop <= content.clientHeight + 1;
       
-      // If at top and scrolling up, or at bottom and scrolling down, allow parent scroll
-      if ((isAtTop && diffY > 0) || (isAtBottom && diffY < 0)) {
-        // Allow parent to handle (close modal)
-        e.stopPropagation();
-      } else {
-        // Prevent default to allow smooth scrolling within modal
+      // If we're at the top and swiping down, handle modal drag
+      if (isAtTop && deltaY > 0) {
         e.preventDefault();
+        setVerticalDelta(deltaY);
+      }
+      // If we're NOT at the top, allow normal scrolling
+      else if (!isAtTop) {
+        // Allow normal scrolling - don't prevent default
       }
     }
   };
@@ -163,25 +158,18 @@ const ImageGallery = () => {
   const handleTouchEnd = (e) => {
     if (!touchStart) return;
     
-    const touchEnd = {
-      x: e.changedTouches[0].clientX,
-      y: e.changedTouches[0].clientY
-    };
+    const endY = e.changedTouches[0].clientY;
+    const deltaY = endY - touchStart.y;
     
-    const diffY = touchEnd.y - touchStart.y;
-    const diffX = touchEnd.x - touchStart.x;
-    const timeDiff = Date.now() - touchStart.time;
-    
-    // Check for swipe down to close (only if not scrolling content)
-    if (!isScrolling && Math.abs(diffY) > 50 && timeDiff < 300 && Math.abs(diffY) > Math.abs(diffX)) {
-      if (diffY > 0) {
-        // Swipe down - close modal
-        closeModal();
-      }
+    // If swiped down enough, close the modal
+    if (deltaY > 100) {
+      closeModal();
+    } else {
+      // Reset position
+      setVerticalDelta(0);
     }
     
     setTouchStart(null);
-    setIsScrolling(false);
   };
 
   // Add event listeners for touch events
@@ -198,7 +186,7 @@ const ImageGallery = () => {
       content.removeEventListener('touchmove', handleTouchMove);
       content.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [selectedImage, touchStart, isScrolling]);
+  }, [selectedImage, touchStart]);
 
   // Add escape key listener
   useEffect(() => {
@@ -212,11 +200,10 @@ const ImageGallery = () => {
     return () => document.removeEventListener('keydown', handleEscapeKey);
   }, [selectedImage]);
 
-  // Clean up on unmount
+  // Clean up
   useEffect(() => {
     return () => {
       document.body.style.overflow = 'auto';
-      document.body.style.touchAction = 'auto';
     };
   }, []);
 
@@ -469,15 +456,18 @@ const ImageGallery = () => {
         </div>
       </div>
 
-      {/* Modal with improved touch scrolling */}
+      {/* Modal with simplified swipe handling */}
       {selectedImage && (
         <div 
           ref={modalRef}
           className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col items-center justify-center p-4"
-          onClick={closeModal}
-          style={{ 
-            touchAction: 'pan-y pinch-zoom',
-            WebkitOverflowScrolling: 'touch'
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeModal();
+          }}
+          style={{
+            transform: `translateY(${verticalDelta}px)`,
+            opacity: isClosing ? 0 : 1 - (verticalDelta / 500),
+            transition: isClosing ? 'transform 0.3s ease, opacity 0.3s ease' : 'none',
           }}
         >
           <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
@@ -498,29 +488,27 @@ const ImageGallery = () => {
                 </button>
               </div>
 
-              {/* Scrollable content area - NO SCROLLING CONTAINER, just natural flow */}
+              {/* Content area */}
               <div 
                 ref={contentRef}
-                className="flex-1 flex flex-col items-center justify-center overflow-y-auto overscroll-contain"
+                className="flex-1 overflow-y-auto overscroll-contain"
                 style={{ 
                   WebkitOverflowScrolling: 'touch',
-                  overscrollBehavior: 'contain',
                   touchAction: 'pan-y'
                 }}
               >
-                <div className="w-full px-4">
+                <div className="w-full px-4 pb-20">
                   {/* Image container */}
-                  <div className="w-full mb-6 flex items-center justify-center" style={{ minHeight: '50vh' }}>
+                  <div className="w-full mb-6 flex items-center justify-center min-h-[50vh]">
                     <img
                       src={selectedImage.src}
                       alt={selectedImage.alt}
                       className="max-w-full max-h-[60vh] object-contain"
-                      style={{ touchAction: 'pan-y pinch-zoom' }}
                     />
                   </div>
 
-                  {/* Content that can scroll naturally */}
-                  <div className="w-full max-w-4xl mx-auto pb-8">
+                  {/* Content */}
+                  <div className="w-full max-w-4xl mx-auto">
                     <div className="flex flex-wrap items-center gap-3 mb-3">
                       <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest">
                         {selectedImage.category}
@@ -542,7 +530,6 @@ const ImageGallery = () => {
                           const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
                           const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
                           setSelectedImage(galleryImages[prevIndex]);
-                          // Scroll to top when changing images
                           if (contentRef.current) {
                             contentRef.current.scrollTop = 0;
                           }
@@ -566,7 +553,6 @@ const ImageGallery = () => {
                           const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
                           const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
                           setSelectedImage(galleryImages[nextIndex]);
-                          // Scroll to top when changing images
                           if (contentRef.current) {
                             contentRef.current.scrollTop = 0;
                           }
@@ -586,10 +572,11 @@ const ImageGallery = () => {
             </div>
           </div>
           
-          {/* Instructions for mobile */}
-          <div className="text-white/60 text-sm text-center py-2 px-4 border-t border-white/20 w-full">
-            <p className="md:hidden">Swipe down to close • Swipe up/down to scroll</p>
-            <p className="hidden md:block">Press ESC or click outside to close</p>
+          {/* Visual cue for swipe */}
+          <div className="w-full text-center py-4 border-t border-white/20">
+            <div className="inline-block w-8 h-1 bg-white/30 rounded-full mb-2"></div>
+            <p className="text-white/60 text-sm md:hidden">Swipe down to close</p>
+            <p className="text-white/60 text-sm hidden md:block">Click outside or press ESC to close</p>
           </div>
         </div>
       )}
