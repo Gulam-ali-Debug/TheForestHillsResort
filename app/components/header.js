@@ -18,13 +18,13 @@ const Header = () => {
         <div className="absolute inset-y-0 left-0 w-1/3 pointer-events-none z-[-1] bg-gradient-to-r from-black/30 via-transparent to-transparent"></div>
         <div className="absolute inset-y-0 right-0 w-1/3 pointer-events-none z-[-1] bg-gradient-to-l from-black/30 via-transparent to-transparent"></div>
         
-        {/* Main Header Content - Increased Height */}
-        <div className="flex justify-between items-center py-5 relative">
+        {/* Main Header Content - Reduced Height on Mobile */}
+        <div className="flex justify-between items-center py-3 md:py-5 relative">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+            <h1 className="text-xl md:text-3xl font-bold text-white tracking-tight">
               The Forest Hills Resort
             </h1>
-            <p className="text-sm md:text-base text-gray-300 mt-1 font-light">
+            <p className="text-xs md:text-base text-gray-300 mt-0.5 md:mt-1 font-light">
               Udaipur's Premier Luxury Destination
             </p>
           </div>
@@ -78,7 +78,7 @@ const Header = () => {
           {/* Mobile Menu Button */}
           <button 
             onClick={toggleMobileMenu}
-            className="md:hidden text-white focus:outline-none p-2"
+            className="md:hidden text-white focus:outline-none p-1"
             aria-label="Toggle mobile menu"
             aria-expanded={isMobileMenuOpen}
           >
