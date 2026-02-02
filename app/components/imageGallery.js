@@ -8,6 +8,7 @@ const ImageGallery = () => {
   const [touchStart, setTouchStart] = useState(null);
   const [verticalDelta, setVerticalDelta] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   const galleryImages = [
     { 
@@ -96,9 +97,22 @@ const ImageGallery = () => {
     },
   ];
 
+  // Detect small screens
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth <= 375); // iPhone 6/7 width
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
   const handleImageClick = (image) => {
     setSelectedImage(image);
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
   };
 
   const closeModal = () => {
@@ -108,6 +122,8 @@ const ImageGallery = () => {
       setVerticalDelta(0);
       setIsClosing(false);
       document.body.style.overflow = 'auto';
+      document.body.style.position = 'static';
+      document.body.style.width = 'auto';
     }, 300);
   };
 
@@ -121,11 +137,12 @@ const ImageGallery = () => {
     }
   };
 
-  // Simple touch handlers without complex logic
+  // Simplified touch handlers - let browser handle scrolling
   const handleTouchStart = (e) => {
     setTouchStart({
       y: e.touches[0].clientY,
       x: e.touches[0].clientX,
+      scrollTop: contentRef.current?.scrollTop || 0
     });
     setVerticalDelta(0);
   };
@@ -138,20 +155,14 @@ const ImageGallery = () => {
     const deltaY = currentY - touchStart.y;
     const deltaX = currentX - touchStart.x;
     
-    // Only handle vertical swipes (more vertical than horizontal)
+    // Check if this is a vertical swipe
     if (Math.abs(deltaY) > Math.abs(deltaX)) {
-      const content = contentRef.current;
-      const isAtTop = content.scrollTop === 0;
-      
-      // If we're at the top and swiping down, handle modal drag
-      if (isAtTop && deltaY > 0) {
+      // If at the very top and swiping down, handle modal drag
+      if (touchStart.scrollTop === 0 && deltaY > 0) {
         e.preventDefault();
         setVerticalDelta(deltaY);
       }
-      // If we're NOT at the top, allow normal scrolling
-      else if (!isAtTop) {
-        // Allow normal scrolling - don't prevent default
-      }
+      // Otherwise, let the browser handle scrolling naturally
     }
   };
 
@@ -161,11 +172,11 @@ const ImageGallery = () => {
     const endY = e.changedTouches[0].clientY;
     const deltaY = endY - touchStart.y;
     
-    // If swiped down enough, close the modal
-    if (deltaY > 100) {
+    // Close modal if swiped down enough
+    if (deltaY > 80) { // Reduced threshold for small screens
       closeModal();
     } else {
-      // Reset position
+      // Animate back to original position
       setVerticalDelta(0);
     }
     
@@ -204,6 +215,8 @@ const ImageGallery = () => {
   useEffect(() => {
     return () => {
       document.body.style.overflow = 'auto';
+      document.body.style.position = 'static';
+      document.body.style.width = 'auto';
     };
   }, []);
 
@@ -456,127 +469,129 @@ const ImageGallery = () => {
         </div>
       </div>
 
-      {/* Modal with simplified swipe handling */}
+      {/* Modal - Optimized for small screens */}
       {selectedImage && (
         <div 
           ref={modalRef}
-          className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col"
           onClick={(e) => {
             if (e.target === e.currentTarget) closeModal();
           }}
           style={{
             transform: `translateY(${verticalDelta}px)`,
-            opacity: isClosing ? 0 : 1 - (verticalDelta / 500),
+            opacity: isClosing ? 0 : 1 - (verticalDelta / 300),
             transition: isClosing ? 'transform 0.3s ease, opacity 0.3s ease' : 'none',
           }}
         >
-          <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
-            <div 
-              className="relative w-full max-w-5xl h-full flex flex-col"
-              onClick={(e) => e.stopPropagation()}
+          {/* Header with close button */}
+          <div className="flex justify-end p-3 z-10 bg-black/50">
+            <button
+              onClick={closeModal}
+              className="bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-full backdrop-blur-sm transition-all duration-300"
+              aria-label="Close full screen view"
             >
-              {/* Header with close button */}
-              <div className="flex justify-end p-4 z-10">
-                <button
-                  onClick={closeModal}
-                  className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-sm transition-all duration-300"
-                  aria-label="Close full screen view"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Scrollable content area - Optimized for small screens */}
+          <div 
+            ref={contentRef}
+            className="flex-1 overflow-y-auto overflow-x-hidden"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+              // Force hardware acceleration for smooth scrolling
+              transform: 'translateZ(0)',
+              backfaceVisibility: 'hidden',
+            }}
+          >
+            <div className="min-h-full flex flex-col items-center justify-start py-4 px-3">
+              {/* Image container with responsive sizing */}
+              <div className={`w-full flex items-center justify-center mb-4 ${isSmallScreen ? 'min-h-[40vh]' : 'min-h-[50vh]'}`}>
+                <img
+                  src={selectedImage.src}
+                  alt={selectedImage.alt}
+                  className={`max-w-full ${isSmallScreen ? 'max-h-[40vh]' : 'max-h-[60vh]'} object-contain`}
+                  style={{ 
+                    // Prevent image from interfering with touch
+                    pointerEvents: 'none',
+                    // Force hardware acceleration
+                    transform: 'translateZ(0)'
+                  }}
+                />
               </div>
 
-              {/* Content area */}
-              <div 
-                ref={contentRef}
-                className="flex-1 overflow-y-auto overscroll-contain"
-                style={{ 
-                  WebkitOverflowScrolling: 'touch',
-                  touchAction: 'pan-y'
-                }}
-              >
-                <div className="w-full px-4 pb-20">
-                  {/* Image container */}
-                  <div className="w-full mb-6 flex items-center justify-center min-h-[50vh]">
-                    <img
-                      src={selectedImage.src}
-                      alt={selectedImage.alt}
-                      className="max-w-full max-h-[60vh] object-contain"
-                    />
+              {/* Content - Adjusted for small screens */}
+              <div className="w-full max-w-4xl mx-auto px-3 pb-6">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <span className="inline-block text-white text-xs font-medium bg-black/80 px-2 py-1 rounded uppercase tracking-widest">
+                    {selectedImage.category}
+                  </span>
+                  <span className="text-white/60 text-xs uppercase tracking-widest">Full Screen</span>
+                </div>
+                <h3 className="text-white text-lg md:text-2xl font-medium mb-3 tracking-wide">
+                  {selectedImage.alt}
+                </h3>
+                <p className="text-white/80 text-sm md:text-base max-w-2xl leading-relaxed mb-6">
+                  {selectedImage.description}
+                </p>
+                
+                {/* Navigation buttons - Stacked vertically on small screens */}
+                <div className={`flex ${isSmallScreen ? 'flex-col gap-4' : 'justify-between items-center'} pt-4 border-t border-white/20`}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
+                      const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
+                      setSelectedImage(galleryImages[prevIndex]);
+                      if (contentRef.current) {
+                        contentRef.current.scrollTop = 0;
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-2 text-white/80 hover:text-white transition-colors p-2 ${isSmallScreen ? 'w-full' : ''}`}
+                    aria-label="Previous image"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span className="text-sm">Previous</span>
+                  </button>
+                  
+                  <div className="text-white/60 text-sm text-center">
+                    {galleryImages.findIndex(img => img.id === selectedImage.id) + 1} / {galleryImages.length}
                   </div>
-
-                  {/* Content */}
-                  <div className="w-full max-w-4xl mx-auto">
-                    <div className="flex flex-wrap items-center gap-3 mb-3">
-                      <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest">
-                        {selectedImage.category}
-                      </span>
-                      <span className="text-white/60 text-sm uppercase tracking-widest">Full Screen</span>
-                    </div>
-                    <h3 className="text-white text-2xl font-medium mb-3 tracking-wide">
-                      {selectedImage.alt}
-                    </h3>
-                    <p className="text-white/80 text-base max-w-2xl leading-relaxed mb-6">
-                      {selectedImage.description}
-                    </p>
-                    
-                    {/* Navigation buttons */}
-                    <div className="flex justify-between items-center pt-4 border-t border-white/20">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
-                          const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
-                          setSelectedImage(galleryImages[prevIndex]);
-                          if (contentRef.current) {
-                            contentRef.current.scrollTop = 0;
-                          }
-                        }}
-                        className="flex items-center gap-2 text-white/80 hover:text-white transition-colors p-2"
-                        aria-label="Previous image"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span className="text-sm">Previous</span>
-                      </button>
-                      
-                      <div className="text-white/60 text-sm">
-                        {galleryImages.findIndex(img => img.id === selectedImage.id) + 1} / {galleryImages.length}
-                      </div>
-                      
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
-                          const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
-                          setSelectedImage(galleryImages[nextIndex]);
-                          if (contentRef.current) {
-                            contentRef.current.scrollTop = 0;
-                          }
-                        }}
-                        className="flex items-center gap-2 text-white/80 hover:text-white transition-colors p-2"
-                        aria-label="Next image"
-                      >
-                        <span className="text-sm">Next</span>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
+                      const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
+                      setSelectedImage(galleryImages[nextIndex]);
+                      if (contentRef.current) {
+                        contentRef.current.scrollTop = 0;
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-2 text-white/80 hover:text-white transition-colors p-2 ${isSmallScreen ? 'w-full' : ''}`}
+                    aria-label="Next image"
+                  >
+                    <span className="text-sm">Next</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Visual cue for swipe */}
-          <div className="w-full text-center py-4 border-t border-white/20">
-            <div className="inline-block w-8 h-1 bg-white/30 rounded-full mb-2"></div>
-            <p className="text-white/60 text-sm md:hidden">Swipe down to close</p>
-            <p className="text-white/60 text-sm hidden md:block">Click outside or press ESC to close</p>
+          {/* Visual cue for swipe - Only show on small screens */}
+          <div className="w-full text-center py-3 border-t border-white/20 bg-black/50">
+            <div className="inline-block w-6 h-1 bg-white/30 rounded-full mb-1"></div>
+            <p className="text-white/60 text-xs md:hidden">Swipe down from top to close</p>
+            <p className="text-white/60 text-xs hidden md:block">Click outside or press ESC to close</p>
           </div>
         </div>
       )}
