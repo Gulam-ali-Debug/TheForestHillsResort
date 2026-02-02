@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ImageGallery = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -94,10 +94,14 @@ const ImageGallery = () => {
 
   const handleImageClick = (image) => {
     setSelectedImage(image);
+    // Prevent body scroll when modal opens
+    document.body.style.overflow = 'hidden';
   };
 
   const closeModal = () => {
     setSelectedImage(null);
+    // Re-enable body scroll when modal closes
+    document.body.style.overflow = 'auto';
   };
 
   const handleKeyDown = (e, imageId) => {
@@ -110,29 +114,68 @@ const ImageGallery = () => {
     }
   };
 
+  // Add effect to handle modal scroll
+  useEffect(() => {
+    const handleModalScroll = (e) => {
+      const modalContent = e.target;
+      const isAtTop = modalContent.scrollTop === 0;
+      const isAtBottom = modalContent.scrollHeight - modalContent.scrollTop === modalContent.clientHeight;
+      
+      // Allow modal to scroll
+      if (!isAtTop && !isAtBottom) {
+        e.stopPropagation();
+      }
+    };
+
+    const modal = document.querySelector('.modal-content');
+    if (modal) {
+      modal.addEventListener('scroll', handleModalScroll, { passive: true });
+      return () => modal.removeEventListener('scroll', handleModalScroll);
+    }
+  }, [selectedImage]);
+
+  // Add escape key listener
+  useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape' && selectedImage) {
+        closeModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [selectedImage]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="py-12 px-4 md:px-8">
-        <div className="max-w-6xl mx-auto"> {/* Changed from max-w-7xl to max-w-6xl */}
-        <div className="mb-16 text-center">
-                        <div className="inline-block mb-4">
-                            <div className="w-20 h-1 bg-gray-500 mb-3 mx-auto"></div>
-                            <p className="text-sm font-light tracking-[0.3em] text-gray-400 uppercase mb-2">
-                                Watch for Experience
-                            </p>
-                        </div>
-                        <h2 className="text-5xl font-light text-white mb-4">
-                            Our Gallery
-                        </h2>
-                        <p className="text-gray-400 font-light max-w-2xl mx-auto">
-                            Experience the serene beauty of Forest Hills Resort through our curated collection.
-                        </p>
-                    </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-16 text-center">
+            <div className="inline-block mb-4">
+              <div className="w-20 h-1 bg-gray-500 mb-3 mx-auto"></div>
+              <p className="text-sm font-light tracking-[0.3em] text-gray-400 uppercase mb-2">
+                Watch for Experience
+              </p>
+            </div>
+            <h2 className="text-5xl font-light text-white mb-4">
+              Our Gallery
+            </h2>
+            <p className="text-gray-400 font-light max-w-2xl mx-auto">
+              Experience the serene beauty of Forest Hills Resort through our curated collection.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Row 1 */}
             <div className="md:col-span-2">
               <div 
-                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-80 to h-64
+                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group"
                 onClick={() => handleImageClick(galleryImages[0])}
                 onKeyDown={(e) => handleKeyDown(e, galleryImages[0].id)}
                 tabIndex={0}
@@ -145,19 +188,19 @@ const ImageGallery = () => {
                   className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-75"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700">
-                  <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700"> {/* Reduced from p-8 to p-6 */}
-                    <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest"> {/* Reduced padding */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700">
+                    <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest">
                       {galleryImages[0].category}
                     </span>
-                    <h3 className="text-white text-xl font-medium mt-3 tracking-wide"> {/* Reduced from text-2xl to text-xl */}
+                    <h3 className="text-white text-xl font-medium mt-3 tracking-wide">
                       {galleryImages[0].alt}
                     </h3>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                     <div className="text-center text-white p-4">
-                      <p className="text-base mb-4 tracking-wide">CLICK TO EXPAND</p> {/* Reduced from text-xl to text-base */}
-                      <div className="w-10 h-10 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-12 h-12 to w-10 h-10 */}
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-6 h-6 to w-5 h-5 */}
+                      <p className="text-base mb-4 tracking-wide">CLICK TO EXPAND</p>
+                      <div className="w-10 h-10 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -167,9 +210,9 @@ const ImageGallery = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 gap-4"> {/* Reduced gap from gap-6 to gap-4 */}
+            <div className="grid grid-cols-1 gap-4">
               <div 
-                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-80 to h-64
+                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group"
                 onClick={() => handleImageClick(galleryImages[1])}
                 onKeyDown={(e) => handleKeyDown(e, galleryImages[1].id)}
                 tabIndex={0}
@@ -186,14 +229,14 @@ const ImageGallery = () => {
                     <span className="inline-block text-white text-xs font-medium bg-black/80 px-3 py-1 rounded uppercase tracking-widest">
                       {galleryImages[1].category}
                     </span>
-                    <h3 className="text-white text-lg font-medium mt-2 tracking-wide"> {/* Reduced from text-xl to text-lg */}
+                    <h3 className="text-white text-lg font-medium mt-2 tracking-wide">
                       {galleryImages[1].alt}
                     </h3>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                     <div className="text-center text-white p-4">
-                      <div className="w-8 h-8 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-10 h-10 to w-8 h-8 */}
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-5 h-5 to w-4 h-4 */}
+                      <div className="w-8 h-8 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -206,7 +249,7 @@ const ImageGallery = () => {
             {/* Row 2 */}
             <div className="md:col-span-1">
               <div 
-                className="relative h-56 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-64 to h-56
+                className="relative h-56 rounded overflow-hidden shadow-md cursor-pointer group"
                 onClick={() => handleImageClick(galleryImages[3])}
                 onKeyDown={(e) => handleKeyDown(e, galleryImages[3].id)}
                 tabIndex={0}
@@ -219,18 +262,18 @@ const ImageGallery = () => {
                   className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-75"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700"> {/* Reduced from p-5 to p-4 */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700">
                     <span className="inline-block text-white text-xs font-medium bg-black/80 px-2 py-1 rounded uppercase tracking-widest">
                       {galleryImages[3].category}
                     </span>
-                    <h3 className="text-white text-base font-medium mt-1.5 tracking-wide"> {/* Reduced from text-lg to text-base */}
+                    <h3 className="text-white text-base font-medium mt-1.5 tracking-wide">
                       {galleryImages[3].alt}
                     </h3>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                     <div className="text-center text-white">
-                      <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-8 h-8 to w-6 h-6 */}
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-4 h-4 to w-3 h-3 */}
+                      <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -242,7 +285,7 @@ const ImageGallery = () => {
             
             <div className="md:col-span-2">
               <div 
-                className="relative h-56 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-64 to h-56
+                className="relative h-56 rounded overflow-hidden shadow-md cursor-pointer group"
                 onClick={() => handleImageClick(galleryImages[4])}
                 onKeyDown={(e) => handleKeyDown(e, galleryImages[4].id)}
                 tabIndex={0}
@@ -255,18 +298,18 @@ const ImageGallery = () => {
                   className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-75"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700">
-                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700"> {/* Reduced from p-5 to p-4 */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700">
                     <span className="inline-block text-white text-xs font-medium bg-black/80 px-2 py-1 rounded uppercase tracking-widest">
                       {galleryImages[4].category}
                     </span>
-                    <h3 className="text-white text-base font-medium mt-1.5 tracking-wide"> {/* Reduced from text-lg to text-base */}
+                    <h3 className="text-white text-base font-medium mt-1.5 tracking-wide">
                       {galleryImages[4].alt}
                     </h3>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                     <div className="text-center text-white">
-                      <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-8 h-8 to w-6 h-6 */}
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-4 h-4 to w-3 h-3 */}
+                      <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -280,7 +323,7 @@ const ImageGallery = () => {
             {galleryImages.slice(5, 8).map((image) => (
               <div 
                 key={image.id}
-                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-80 to h-64
+                className="relative h-64 rounded overflow-hidden shadow-md cursor-pointer group"
                 onClick={() => handleImageClick(image)}
                 onKeyDown={(e) => handleKeyDown(e, image.id)}
                 tabIndex={0}
@@ -293,18 +336,18 @@ const ImageGallery = () => {
                   className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-75"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700">
-                  <div className="absolute bottom-0 left-0 right-0 p-5 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700"> {/* Reduced from p-6 to p-5 */}
-                    <span className="inline-block text-white text-xs font-medium bg-black/80 px-2 py-1 rounded uppercase tracking-widest"> {/* Reduced padding */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-700">
+                    <span className="inline-block text-white text-xs font-medium bg-black/80 px-2 py-1 rounded uppercase tracking-widest">
                       {image.category}
                     </span>
-                    <h3 className="text-white text-lg font-medium mt-2 tracking-wide"> {/* Reduced from text-xl to text-lg */}
+                    <h3 className="text-white text-lg font-medium mt-2 tracking-wide">
                       {image.alt}
                     </h3>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                     <div className="text-center text-white p-4">
-                      <div className="w-8 h-8 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-10 h-10 to w-8 h-8 */}
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-5 h-5 to w-4 h-4 */}
+                      <div className="w-8 h-8 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -316,11 +359,11 @@ const ImageGallery = () => {
 
             {/* Row 4 - 4 Smaller Images */}
             <div className="md:col-span-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3"> {/* Reduced gap from gap-4 to gap-3 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                 {galleryImages.slice(8, 12).map((image) => (
                   <div 
                     key={image.id}
-                    className="relative h-48 rounded overflow-hidden shadow-md cursor-pointer group" // Reduced from h-56 to h-48
+                    className="relative h-48 rounded overflow-hidden shadow-md cursor-pointer group"
                     onClick={() => handleImageClick(image)}
                     onKeyDown={(e) => handleKeyDown(e, image.id)}
                     tabIndex={0}
@@ -333,18 +376,18 @@ const ImageGallery = () => {
                       className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-75"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700">
-                      <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-700"> {/* Reduced from p-4 to p-3 */}
-                        <span className="inline-block text-white text-xs font-medium bg-black/80 px-1.5 py-0.5 rounded uppercase tracking-widest"> {/* Reduced padding */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-6 group-hover:translate-y-0 transition-transform duration-700">
+                        <span className="inline-block text-white text-xs font-medium bg-black/80 px-1.5 py-0.5 rounded uppercase tracking-widest">
                           {image.category}
                         </span>
-                        <h3 className="text-white text-sm font-medium mt-1 tracking-wide line-clamp-1"> {/* Reduced from text-base to text-sm */}
+                        <h3 className="text-white text-sm font-medium mt-1 tracking-wide line-clamp-1">
                           {image.alt}
                         </h3>
                       </div>
                       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-700">
                         <div className="text-center text-white">
-                          <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center"> {/* Reduced from w-8 h-8 to w-6 h-6 */}
-                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-4 h-4 to w-3 h-3 */}
+                          <div className="w-6 h-6 mx-auto border-2 border-white/50 rounded-full flex items-center justify-center">
+                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                           </div>
@@ -358,74 +401,107 @@ const ImageGallery = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal with improved scroll handling */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black bg-opacity-95 flex flex-col items-center justify-center p-4"
           onClick={closeModal}
+          style={{ touchAction: 'pan-y' }} // Allow vertical panning
         >
-          <div 
-            className="relative w-full max-w-5xl max-h-[85vh]" // Reduced max-w-6xl to max-w-5xl and max-h-[90vh] to max-h-[85vh]
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={closeModal}
-              className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 text-white p-3 rounded backdrop-blur-sm transition-all duration-300"
-              aria-label="Close full screen view"
+          <div className="flex-1 flex items-center justify-center w-full">
+            <div 
+              className="relative w-full max-w-5xl h-full flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <img
-              src={selectedImage.src}
-              alt={selectedImage.alt}
-              className="w-full h-full object-contain"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-6"> {/* Reduced from p-8 to p-6 */}
-              <div className="max-w-4xl mx-auto">
-                <div className="flex flex-wrap items-center gap-3 mb-3"> {/* Reduced gap and margin */}
-                  <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest"> {/* Reduced padding */}
-                    {selectedImage.category}
-                  </span>
-                  <span className="text-white/60 text-sm uppercase tracking-widest">Full Screen</span>
-                </div>
-                <h3 className="text-white text-2xl font-medium mb-3 tracking-wide"> {/* Reduced from text-3xl to text-2xl */}
-                  {selectedImage.alt}
-                </h3>
-                <p className="text-white/80 text-base max-w-2xl leading-relaxed"> {/* Reduced from text-lg to text-base */}
-                  {selectedImage.description}
-                </p>
+              {/* Header with close button */}
+              <div className="flex justify-end p-4">
+                <button
+                  onClick={closeModal}
+                  className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full backdrop-blur-sm transition-all duration-300 z-20"
+                  aria-label="Close full screen view"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            </div>
-            <div className="absolute left-4 right-4 top-1/2 transform -translate-y-1/2 flex justify-between">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
-                  const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
-                  setSelectedImage(galleryImages[prevIndex]);
+
+              {/* Scrollable content area */}
+              <div 
+                className="modal-content flex-1 overflow-y-auto overscroll-contain" // Added overscroll-contain
+                style={{ 
+                  WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+                  overscrollBehavior: 'contain' // Prevent scroll chaining
                 }}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded backdrop-blur-sm transition-all duration-300" // Reduced from p-3 to p-2
-                aria-label="Previous image"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-6 h-6 to w-5 h-5 */}
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
-                  const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
-                  setSelectedImage(galleryImages[nextIndex]);
-                }}
-                className="bg-white/10 hover:bg-white/20 text-white p-2 rounded backdrop-blur-sm transition-all duration-300" // Reduced from p-3 to p-2
-                aria-label="Next image"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"> {/* Reduced from w-6 h-6 to w-5 h-5 */}
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+                <div className="flex flex-col items-center justify-center min-h-full">
+                  {/* Image container */}
+                  <div className="w-full max-h-[60vh] flex items-center justify-center mb-6">
+                    <img
+                      src={selectedImage.src}
+                      alt={selectedImage.alt}
+                      className="max-w-full max-h-full object-contain"
+                      style={{ touchAction: 'pan-y pinch-zoom' }} // Allow zoom and pan
+                    />
+                  </div>
+
+                  {/* Content that can scroll */}
+                  <div className="w-full max-w-4xl mx-auto px-4 pb-8">
+                    <div className="flex flex-wrap items-center gap-3 mb-3">
+                      <span className="inline-block text-white text-sm font-medium bg-black/80 px-3 py-1.5 rounded uppercase tracking-widest">
+                        {selectedImage.category}
+                      </span>
+                      <span className="text-white/60 text-sm uppercase tracking-widest">Full Screen</span>
+                    </div>
+                    <h3 className="text-white text-2xl font-medium mb-3 tracking-wide">
+                      {selectedImage.alt}
+                    </h3>
+                    <p className="text-white/80 text-base max-w-2xl leading-relaxed mb-6">
+                      {selectedImage.description}
+                    </p>
+                    
+                    {/* Navigation buttons */}
+                    <div className="flex justify-between items-center pt-4 border-t border-white/20">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
+                          const prevIndex = currentIndex > 0 ? currentIndex - 1 : galleryImages.length - 1;
+                          setSelectedImage(galleryImages[prevIndex]);
+                        }}
+                        className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                        aria-label="Previous image"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span className="text-sm">Previous</span>
+                      </button>
+                      
+                      <div className="text-white/60 text-sm">
+                        {galleryImages.findIndex(img => img.id === selectedImage.id) + 1} / {galleryImages.length}
+                      </div>
+                      
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentIndex = galleryImages.findIndex(img => img.id === selectedImage.id);
+                          const nextIndex = currentIndex < galleryImages.length - 1 ? currentIndex + 1 : 0;
+                          setSelectedImage(galleryImages[nextIndex]);
+                        }}
+                        className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+                        aria-label="Next image"
+                      >
+                        <span className="text-sm">Next</span>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
