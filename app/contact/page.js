@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm, ValidationError } from '@formspree/react';
 
 const ContactFormPage = () => {
+  const [state, handleSubmit] = useForm("mzdvvgjp");
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -14,9 +16,6 @@ const ContactFormPage = () => {
     message: ''
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -25,30 +24,40 @@ const ContactFormPage = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Prepare Formspree data
+    const formDataToSend = new FormData(e.target);
     
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    // Add all form fields
+    formDataToSend.append('name', formData.name);
+    formDataToSend.append('email', formData.email);
+    formDataToSend.append('phone', formData.phone);
+    formDataToSend.append('checkIn', formData.checkIn);
+    formDataToSend.append('checkOut', formData.checkOut);
+    formDataToSend.append('guests', formData.guests);
+    formDataToSend.append('roomType', formData.roomType);
+    formDataToSend.append('message', formData.message);
     
-    // Reset form after 3 seconds
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        checkIn: '',
-        checkOut: '',
-        guests: '',
-        roomType: '',
-        message: ''
-      });
-    }, 3000);
+    // Call Formspree's handleSubmit
+    await handleSubmit(e);
+    
+    // If submission is successful, reset form
+    if (state.succeeded) {
+      setTimeout(() => {
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          checkIn: '',
+          checkOut: '',
+          guests: '',
+          roomType: '',
+          message: ''
+        });
+      }, 1000);
+    }
   };
 
   return (
@@ -76,7 +85,7 @@ const ContactFormPage = () => {
 
       {/* Contact Form Section */}
       <div className="max-w-6xl mx-auto px-4 py-16">
-        {isSubmitted ? (
+        {state.succeeded ? (
           <div className="text-center py-12">
             <div className="inline-block p-6 mb-6 border-2 border-black">
               <svg className="w-16 h-16 mx-auto text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,11 +156,14 @@ const ContactFormPage = () => {
             <div>
               <h2 className="text-3xl font-bold mb-8 tracking-wide">BOOKING INQUIRY</h2>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={onSubmit} className="space-y-6">
+                <input type="hidden" name="form-name" value="contact-form" />
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">FULL NAME *</label>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-900 mb-2">FULL NAME *</label>
                     <input
+                      id="name"
                       type="text"
                       name="name"
                       value={formData.name}
@@ -160,11 +172,18 @@ const ContactFormPage = () => {
                       className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors"
                       placeholder="Enter your full name"
                     />
+                    <ValidationError 
+                      prefix="Name" 
+                      field="name"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">EMAIL ADDRESS *</label>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">EMAIL ADDRESS *</label>
                     <input
+                      id="email"
                       type="email"
                       name="email"
                       value={formData.email}
@@ -173,13 +192,20 @@ const ContactFormPage = () => {
                       className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors"
                       placeholder="your.email@example.com"
                     />
+                    <ValidationError 
+                      prefix="Email" 
+                      field="email"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">PHONE NUMBER *</label>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-900 mb-2">PHONE NUMBER *</label>
                     <input
+                      id="phone"
                       type="tel"
                       name="phone"
                       value={formData.phone}
@@ -188,11 +214,18 @@ const ContactFormPage = () => {
                       className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors"
                       placeholder="+91 00000 00000"
                     />
+                    <ValidationError 
+                      prefix="Phone" 
+                      field="phone"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">GUESTS *</label>
+                    <label htmlFor="guests" className="block text-sm font-medium text-gray-900 mb-2">GUESTS *</label>
                     <select
+                      id="guests"
                       name="guests"
                       value={formData.guests}
                       onChange={handleChange}
@@ -206,13 +239,20 @@ const ContactFormPage = () => {
                       <option value="4">4 Guests</option>
                       <option value="5+">5+ Guests</option>
                     </select>
+                    <ValidationError 
+                      prefix="Guests" 
+                      field="guests"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">CHECK-IN DATE *</label>
+                    <label htmlFor="checkIn" className="block text-sm font-medium text-gray-900 mb-2">CHECK-IN DATE *</label>
                     <input
+                      id="checkIn"
                       type="date"
                       name="checkIn"
                       value={formData.checkIn}
@@ -220,11 +260,18 @@ const ContactFormPage = () => {
                       required
                       className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors"
                     />
+                    <ValidationError 
+                      prefix="CheckIn" 
+                      field="checkIn"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-900 mb-2">CHECK-OUT DATE *</label>
+                    <label htmlFor="checkOut" className="block text-sm font-medium text-gray-900 mb-2">CHECK-OUT DATE *</label>
                     <input
+                      id="checkOut"
                       type="date"
                       name="checkOut"
                       value={formData.checkOut}
@@ -232,12 +279,19 @@ const ContactFormPage = () => {
                       required
                       className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors"
                     />
+                    <ValidationError 
+                      prefix="CheckOut" 
+                      field="checkOut"
+                      errors={state.errors}
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">ROOM TYPE *</label>
+                  <label htmlFor="roomType" className="block text-sm font-medium text-gray-900 mb-2">ROOM TYPE *</label>
                   <select
+                    id="roomType"
                     name="roomType"
                     value={formData.roomType}
                     onChange={handleChange}
@@ -251,11 +305,18 @@ const ContactFormPage = () => {
                     <option value="family">Family Suite</option>
                     <option value="honeymoon">Honeymoon Suite</option>
                   </select>
+                  <ValidationError 
+                    prefix="RoomType" 
+                    field="roomType"
+                    errors={state.errors}
+                    className="text-red-500 text-sm mt-1"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-2">ADDITIONAL MESSAGES</label>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">ADDITIONAL MESSAGES</label>
                   <textarea
+                    id="message"
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
@@ -263,14 +324,20 @@ const ContactFormPage = () => {
                     className="w-full px-4 py-3 border border-gray-400 focus:border-black focus:outline-none transition-colors resize-none"
                     placeholder="Any special requests or questions..."
                   />
+                  <ValidationError 
+                    prefix="Message" 
+                    field="message"
+                    errors={state.errors}
+                    className="text-red-500 text-sm mt-1"
+                  />
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={state.submitting}
                   className="w-full py-4 bg-black text-white font-semibold text-lg tracking-wide hover:bg-gray-900 transition-colors duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? (
+                  {state.submitting ? (
                     <span className="flex items-center justify-center">
                       <svg className="animate-spin h-5 w-5 mr-3 text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -298,7 +365,7 @@ const ContactFormPage = () => {
           <h2 className="text-3xl font-bold mb-8 text-center tracking-wide">OUR LOCATION</h2>
           <div className="h-[400px] bg-gray-200 flex items-center justify-center">
             <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3633.415288989515!2d73.77380993313521!3d24.401636038156877!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3967eb8ebb9204d5%3A0xca41dc92561071ea!2sThe%20Forest%20Hills%20Resort!5e0!3m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3633.415288989515!2d73.77380993313521!3d24.401646638156875!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3967eb8ebb9204d5%3A0xca41dc92561071ea!2sThe%20Forest%20Hills%20Resort!5e0!3m2!1sen!2sin"
               width="100%"
               height="100%"
               style={{ border: 0 }}
