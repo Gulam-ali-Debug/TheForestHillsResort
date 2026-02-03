@@ -51,168 +51,144 @@ const slides = [
 const Slider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   
-  // Swipe detection refs
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const touchEndX = useRef(0);
-  const touchEndY = useRef(0);
-  const isTouchActive = useRef(false);
+  // Refs for touch handling
   const sliderRef = useRef(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const currentX = useRef(0);
+  const slidesContainerRef = useRef(null);
 
   const nextSlide = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    setTimeout(() => setIsTransitioning(false), 500);
+    setTimeout(() => setIsTransitioning(false), 300);
   }, [isTransitioning]);
 
   const prevSlide = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-    setTimeout(() => setIsTransitioning(false), 500);
+    setTimeout(() => setIsTransitioning(false), 300);
   }, [isTransitioning]);
 
   const goToSlide = useCallback((index) => {
     if (isTransitioning || currentSlide === index) return;
     setIsTransitioning(true);
     setCurrentSlide(index);
-    setTimeout(() => setIsTransitioning(false), 500);
+    setTimeout(() => setIsTransitioning(false), 300);
   }, [isTransitioning, currentSlide]);
 
   // Handle touch start
   const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-    isTouchActive.current = true;
+    isDragging.current = true;
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    currentX.current = startX.current;
+    
+    // Reset drag offset
+    setDragOffset(0);
   };
 
-  // Handle touch move - ALLOW BOTH horizontal and vertical movement
+  // Handle touch move
   const handleTouchMove = (e) => {
-    if (!isTouchActive.current) return;
+    if (!isDragging.current) return;
     
-    touchEndX.current = e.touches[0].clientX;
-    touchEndY.current = e.touches[0].clientY;
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
     
-    const diffX = touchEndX.current - touchStartX.current;
-    const diffY = touchEndY.current - touchStartY.current;
+    // Calculate movement
+    const deltaX = touchX - currentX.current;
+    const deltaY = touchY - startY.current;
     
-    // If movement is mostly horizontal, give visual feedback
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      // Slight visual feedback for horizontal swipe
-      const slider = sliderRef.current;
-      if (slider) {
-        const slidesContainer = slider.querySelector('.flex');
-        if (slidesContainer) {
-          const slideWidth = slider.clientWidth;
-          const dragOffset = (diffX / slideWidth) * 100;
-          slidesContainer.style.transform = `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`;
-          slidesContainer.style.transition = 'none';
-        }
-      }
+    // Check if it's mostly horizontal movement
+    if (Math.abs(touchX - startX.current) > Math.abs(touchY - startY.current)) {
+      // It's horizontal movement - update drag offset
+      currentX.current = touchX;
+      setDragOffset(touchX - startX.current);
+      
+      // Prevent vertical scroll during horizontal drag
+      e.preventDefault();
     }
   };
 
-  // Handle touch end - decide if it's a swipe or scroll
-  const handleTouchEnd = () => {
-    if (!isTouchActive.current) return;
+  // Handle touch end
+  const handleTouchEnd = (e) => {
+    if (!isDragging.current) return;
     
-    const diffX = touchEndX.current - touchStartX.current;
-    const diffY = touchEndY.current - touchStartY.current;
+    const endX = e.changedTouches[0].clientX;
+    const deltaX = endX - startX.current;
+    const swipeThreshold = 50;
     
-    // Calculate angle of movement (atan2 gives angle in radians)
-    const angle = Math.abs(Math.atan2(diffY, diffX) * 180 / Math.PI);
-    
-    // Reset slider position
-    const slider = sliderRef.current;
-    if (slider) {
-      const slidesContainer = slider.querySelector('.flex');
-      if (slidesContainer) {
-        slidesContainer.style.transition = 'transform 500ms ease-in-out';
-        slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
-      }
-    }
-    
-    // SWIPE DETECTION LOGIC:
-    // If movement is mostly horizontal (angle < 30 degrees or > 150 degrees)
-    // AND has enough horizontal distance
-    const minSwipeDistance = 50;
-    const isHorizontalSwipe = (angle < 30 || angle > 150) && Math.abs(diffX) > minSwipeDistance;
-    
-    if (isHorizontalSwipe) {
-      // It's a horizontal swipe - change slide
-      if (diffX > 0) {
-        prevSlide(); // Swipe right
+    // Determine if it was a swipe
+    if (Math.abs(deltaX) > swipeThreshold) {
+      if (deltaX > 0) {
+        // Swipe right - go to previous slide
+        prevSlide();
       } else {
-        nextSlide(); // Swipe left
+        // Swipe left - go to next slide
+        nextSlide();
       }
     }
-    // If it's NOT a horizontal swipe, allow the natural vertical scroll to continue
     
-    isTouchActive.current = false;
+    // Reset dragging state
+    isDragging.current = false;
+    setDragOffset(0);
   };
 
-  // Handle mouse drag for desktop
+  // Mouse handlers for desktop
   const handleMouseDown = (e) => {
-    touchStartX.current = e.clientX;
-    touchStartY.current = e.clientY;
-    isTouchActive.current = true;
+    isDragging.current = true;
+    startX.current = e.clientX;
+    currentX.current = startX.current;
+    setDragOffset(0);
   };
 
   const handleMouseMove = (e) => {
-    if (!isTouchActive.current) return;
+    if (!isDragging.current) return;
     
-    touchEndX.current = e.clientX;
-    touchEndY.current = e.clientY;
+    const mouseX = e.clientX;
+    const deltaX = mouseX - currentX.current;
     
-    const diffX = touchEndX.current - touchStartX.current;
-    const diffY = touchEndY.current - touchStartY.current;
-    
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      const slider = sliderRef.current;
-      if (slider) {
-        const slidesContainer = slider.querySelector('.flex');
-        if (slidesContainer) {
-          const slideWidth = slider.clientWidth;
-          const dragOffset = (diffX / slideWidth) * 100;
-          slidesContainer.style.transform = `translateX(calc(-${currentSlide * 100}% + ${dragOffset}%))`;
-          slidesContainer.style.transition = 'none';
-        }
-      }
-    }
+    currentX.current = mouseX;
+    setDragOffset(mouseX - startX.current);
   };
 
-  const handleMouseUp = () => {
-    if (!isTouchActive.current) return;
+  const handleMouseUp = (e) => {
+    if (!isDragging.current) return;
     
-    const diffX = touchEndX.current - touchStartX.current;
-    const threshold = 80;
+    const endX = e.clientX;
+    const deltaX = endX - startX.current;
+    const swipeThreshold = 80;
     
-    // Reset slider position
-    const slider = sliderRef.current;
-    if (slider) {
-      const slidesContainer = slider.querySelector('.flex');
-      if (slidesContainer) {
-        slidesContainer.style.transition = 'transform 500ms ease-in-out';
-        slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
-      }
-    }
-    
-    if (Math.abs(diffX) > threshold) {
-      if (diffX > 0) {
+    if (Math.abs(deltaX) > swipeThreshold) {
+      if (deltaX > 0) {
         prevSlide();
       } else {
         nextSlide();
       }
     }
     
-    isTouchActive.current = false;
+    isDragging.current = false;
+    setDragOffset(0);
+  };
+
+  // Handle mouse leave
+  const handleMouseLeave = () => {
+    if (isDragging.current) {
+      isDragging.current = false;
+      setDragOffset(0);
+    }
   };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      nextSlide();
+      if (!isDragging.current) {
+        nextSlide();
+      }
     }, 5000);
     return () => clearInterval(interval);
   }, [nextSlide]);
@@ -227,22 +203,24 @@ const Slider = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevSlide, nextSlide]);
 
-  // Event listeners setup
+  // Setup event listeners
   useEffect(() => {
     const slider = sliderRef.current;
     if (!slider) return;
 
     // Touch events
     slider.addEventListener('touchstart', handleTouchStart, { passive: true });
-    slider.addEventListener('touchmove', handleTouchMove, { passive: true }); // Always passive
+    slider.addEventListener('touchmove', handleTouchMove, { passive: false });
     slider.addEventListener('touchend', handleTouchEnd);
+    slider.addEventListener('touchcancel', handleTouchEnd);
 
     // Mouse events
     slider.addEventListener('mousedown', handleMouseDown);
+    slider.addEventListener('mouseleave', handleMouseLeave);
     
     // Global mouse handlers
     const handleGlobalMouseMove = (e) => handleMouseMove(e);
-    const handleGlobalMouseUp = () => handleMouseUp();
+    const handleGlobalMouseUp = (e) => handleMouseUp(e);
     
     window.addEventListener('mousemove', handleGlobalMouseMove);
     window.addEventListener('mouseup', handleGlobalMouseUp);
@@ -251,12 +229,29 @@ const Slider = () => {
       slider.removeEventListener('touchstart', handleTouchStart);
       slider.removeEventListener('touchmove', handleTouchMove);
       slider.removeEventListener('touchend', handleTouchEnd);
+      slider.removeEventListener('touchcancel', handleTouchEnd);
       
       slider.removeEventListener('mousedown', handleMouseDown);
+      slider.removeEventListener('mouseleave', handleMouseLeave);
+      
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [currentSlide]);
+  }, []);
+
+  // Calculate transform with drag offset
+  const getTransform = () => {
+    if (!isDragging.current || dragOffset === 0) {
+      return `translateX(-${currentSlide * 100}%)`;
+    }
+    
+    // Calculate percentage based on slider width
+    const slider = sliderRef.current;
+    const slideWidth = slider ? slider.clientWidth : 100;
+    const dragPercentage = (dragOffset / slideWidth) * 100;
+    
+    return `translateX(calc(-${currentSlide * 100}% + ${dragPercentage}px))`;
+  };
 
   return (
     <section 
@@ -264,13 +259,15 @@ const Slider = () => {
       className="relative h-screen overflow-hidden bg-black"
       style={{ 
         userSelect: 'none',
-        touchAction: 'pan-y' // Explicitly allow vertical panning
+        cursor: isDragging.current ? 'grabbing' : 'default'
       }}
     >
       <div 
-        className="flex h-full transition-transform duration-500 ease-in-out"
+        ref={slidesContainerRef}
+        className="flex h-full transition-transform duration-300 ease-out"
         style={{ 
-          transform: `translateX(-${currentSlide * 100}%)`,
+          transform: getTransform(),
+          transition: isDragging.current ? 'none' : 'transform 300ms ease-out'
         }}
       >
         {slides.map((slide, index) => (
@@ -282,7 +279,7 @@ const Slider = () => {
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-cover transition-opacity duration-500"
+                className="w-full h-full object-cover"
                 loading={index < 2 ? 'eager' : 'lazy'}
                 draggable="false"
               />
@@ -293,29 +290,17 @@ const Slider = () => {
             <div className="relative h-full flex flex-col justify-center items-center px-4 md:px-8 lg:px-16">
               <div className="max-w-6xl w-full text-center">
                 <h2 
-                  className={`text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 md:mb-6 transition-all duration-500 delay-150 ${
-                    currentSlide === index 
-                      ? 'opacity-100 translate-y-0' 
-                      : 'opacity-0 translate-y-8'
-                  }`}
+                  className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 md:mb-6"
                 >
                   {slide.title}
                 </h2>
                 <p 
-                  className={`text-xl md:text-2xl lg:text-3xl text-white/90 mb-8 md:mb-12 transition-all duration-500 delay-300 ${
-                    currentSlide === index 
-                      ? 'opacity-100 translate-y-0' 
-                      : 'opacity-0 translate-y-8'
-                  }`}
+                  className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-8 md:mb-12"
                 >
                   {slide.subtitle}
                 </p>
                 <div 
-                  className={`flex gap-4 justify-center transition-all duration-500 delay-500 ${
-                    currentSlide === index 
-                      ? 'opacity-100 translate-y-0' 
-                      : 'opacity-0 translate-y-8'
-                  }`}
+                  className="flex gap-4 justify-center"
                 >
                   <Link 
                     href="/contact"
@@ -333,10 +318,10 @@ const Slider = () => {
         ))}
       </div>
 
-      {/* Navigation buttons - only show on desktop */}
+      {/* Navigation buttons - visible on desktop */}
       <button
         onClick={prevSlide}
-        disabled={isTransitioning}
+        disabled={isTransitioning || isDragging.current}
         className="absolute left-4 md:left-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-3 md:p-4 rounded-full transition-all duration-300 z-20 disabled:opacity-50 hidden sm:block"
         aria-label="Previous slide"
       >
@@ -347,7 +332,7 @@ const Slider = () => {
 
       <button
         onClick={nextSlide}
-        disabled={isTransitioning}
+        disabled={isTransitioning || isDragging.current}
         className="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white p-3 md:p-4 rounded-full transition-all duration-300 z-20 disabled:opacity-50 hidden sm:block"
         aria-label="Next slide"
       >
@@ -356,13 +341,13 @@ const Slider = () => {
         </svg>
       </button>
 
-      {/* Slide indicators - always visible */}
+      {/* Slide indicators */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 z-20">
         {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            disabled={isTransitioning}
+            disabled={isTransitioning || isDragging.current}
             className={`transition-all duration-300 ${currentSlide === index ? 'scale-125' : ''}`}
             aria-label={`Go to slide ${index + 1}`}
           >
