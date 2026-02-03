@@ -15,8 +15,8 @@ const slides = [
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
-    unsplashFallback: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    image: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    unsplashFallback: 'https://images.unsplash.com/photo-1769879455980-aaf2d893a1d9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Luxury Rooms',
     title: 'Luxury Accommodations',
     subtitle: 'Elegant rooms with stunning views',
@@ -32,7 +32,7 @@ const slides = [
   },
   {
     id: 4,
-    image: 'https://images.unsplash.com/photo-1769974707320-1b334e3aeb8d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    image: 'https://images.unsplash.com/photo-1769974707320-1b334e3aeb8d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
     alt: 'Fine Dining',
     title: 'Fine Dining',
     subtitle: 'Culinary experiences to remember',
@@ -60,11 +60,12 @@ const Slider = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [localImageErrors, setLocalImageErrors] = useState({});
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [dragDistance, setDragDistance] = useState(0);
+  
+  // Remove all drag-related states and refs
   const containerRef = useRef(null);
-  const [isHorizontalSwipe, setIsHorizontalSwipe] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isDragging = useRef(false);
 
   const nextSlide = useCallback(() => {
     if (isTransitioning) return;
@@ -106,59 +107,107 @@ const Slider = () => {
     }
   }, []);
 
-  // Touch and mouse drag handlers
-  const handleDragStart = (e) => {
-    setIsDragging(true);
-    setIsHorizontalSwipe(false);
-    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    setStartPos({ x: clientX, y: clientY });
-    setDragDistance(0);
+  // Simplified touch handlers - only for slider, not interfering with page scroll
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isDragging.current = true;
   };
 
-  const handleDragMove = (e) => {
-    if (!isDragging) return;
+  const handleTouchMove = (e) => {
+    if (!isDragging.current) return;
     
-    e.preventDefault();
-    const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-    const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-    const distanceX = clientX - startPos.x;
-    const distanceY = clientY - startPos.y;
+    const touchX = e.touches[0].clientX;
+    const touchY = e.touches[0].clientY;
     
-    // Determine if it's a horizontal swipe (for slider) or vertical swipe (for scrolling)
-    const isHorizontal = Math.abs(distanceX) > Math.abs(distanceY) * 1.5;
+    // Calculate movement
+    const diffX = touchX - touchStartX.current;
+    const diffY = touchY - touchStartY.current;
     
-    if (isHorizontal) {
-      setIsHorizontalSwipe(true);
-      setDragDistance(distanceX);
-    } else {
-      // If it's vertical movement, cancel dragging to allow scrolling
-      setIsDragging(false);
-      setDragDistance(0);
+    // Only prevent default if it's clearly a horizontal swipe
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      e.preventDefault(); // Only prevent for horizontal swipes
     }
   };
 
-  const handleDragEnd = () => {
-    if (!isDragging || !isHorizontalSwipe) {
-      setIsDragging(false);
-      setIsHorizontalSwipe(false);
-      setDragDistance(0);
-      return;
-    }
+  const handleTouchEnd = (e) => {
+    if (!isDragging.current) return;
     
-    setIsDragging(false);
-    setIsHorizontalSwipe(false);
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchEndX - touchStartX.current;
     const threshold = 50;
     
-    if (Math.abs(dragDistance) > threshold) {
-      if (dragDistance > 0) {
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
         prevSlide();
       } else {
         nextSlide();
       }
     }
     
-    setDragDistance(0);
+    isDragging.current = false;
+  };
+
+  // Mouse drag handlers for desktop
+  const handleMouseDown = (e) => {
+    touchStartX.current = e.clientX;
+    touchStartY.current = e.clientY;
+    isDragging.current = true;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging.current) return;
+    
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    
+    const diffX = mouseX - touchStartX.current;
+    const diffY = mouseY - touchStartY.current;
+    
+    // Only consider it a drag if it's mostly horizontal
+    if (Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      // Horizontal drag - update slider position visually
+      const slider = containerRef.current;
+      if (slider) {
+        const slideWidth = slider.clientWidth;
+        const dragOffset = (diffX / slideWidth) * 100;
+        
+        // Update transform for visual feedback
+        const slidesContainer = slider.querySelector('.flex');
+        if (slidesContainer) {
+          slidesContainer.style.transform = `translateX(calc(-${currentSlide * 100}% + ${dragOffset}%))`;
+          slidesContainer.style.transition = 'none'; // Disable smooth transition during drag
+        }
+      }
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    if (!isDragging.current) return;
+    
+    const mouseX = e.clientX;
+    const diffX = mouseX - touchStartX.current;
+    const threshold = 80; // Higher threshold for mouse
+    
+    // Restore transition
+    const slider = containerRef.current;
+    if (slider) {
+      const slidesContainer = slider.querySelector('.flex');
+      if (slidesContainer) {
+        slidesContainer.style.transition = 'transform 700ms ease-in-out';
+        slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+      }
+    }
+    
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
+        prevSlide();
+      } else {
+        nextSlide();
+      }
+    }
+    
+    isDragging.current = false;
   };
 
   useEffect(() => {
@@ -182,82 +231,72 @@ const Slider = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevSlide, nextSlide, goToSlide]);
 
-  // Add/remove event listeners for drag
+  // Clean event listeners setup
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const options = { passive: false };
+    // Touch events
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+
+    // Mouse events
+    container.addEventListener('mousedown', handleMouseDown);
     
-    // Store references to functions for cleanup
-    const handleStart = (e) => handleDragStart(e);
-    const handleMove = (e) => handleDragMove(e);
-    const handleEnd = () => handleDragEnd();
+    // Add global mouse handlers for drag
+    const handleGlobalMouseMove = (e) => handleMouseMove(e);
+    const handleGlobalMouseUp = (e) => handleMouseUp(e);
     
-    container.addEventListener('mousedown', handleStart, options);
-    container.addEventListener('mousemove', handleMove, options);
-    container.addEventListener('mouseup', handleEnd, options);
-    container.addEventListener('mouseleave', handleEnd, options);
-    
-    container.addEventListener('touchstart', handleStart, options);
-    container.addEventListener('touchmove', handleMove, options);
-    container.addEventListener('touchend', handleEnd, options);
-    container.addEventListener('touchcancel', handleEnd, options);
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
-      container.removeEventListener('mousedown', handleStart);
-      container.removeEventListener('mousemove', handleMove);
-      container.removeEventListener('mouseup', handleEnd);
-      container.removeEventListener('mouseleave', handleEnd);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
       
-      container.removeEventListener('touchstart', handleStart);
-      container.removeEventListener('touchmove', handleMove);
-      container.removeEventListener('touchend', handleEnd);
-      container.removeEventListener('touchcancel', handleEnd);
+      container.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
     };
-  }, [isDragging, dragDistance, startPos, isHorizontalSwipe]);
+  }, [currentSlide]); // Only re-run when currentSlide changes
 
   return (
     <section 
       className="relative h-screen overflow-hidden bg-black"
       ref={containerRef}
       style={{ 
-        cursor: isDragging && isHorizontalSwipe ? 'grabbing' : 'grab',
-        touchAction: 'pan-y pinch-zoom' // Allow vertical scrolling on touch devices
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        touchAction: 'pan-y pinch-zoom' // Allow vertical scrolling by default
       }}
     >
       <div 
         className="flex h-full transition-transform duration-700 ease-in-out"
         style={{ 
-          transform: `translateX(calc(-${currentSlide * 100}% + ${isHorizontalSwipe ? dragDistance : 0}px))`,
-          cursor: isDragging && isHorizontalSwipe ? 'grabbing' : 'grab'
+          transform: `translateX(-${currentSlide * 100}%)`,
         }}
       >
         {slides.map((slide, index) => (
           <div 
             key={slide.id} 
-            className="relative min-w-full h-full select-none"
-            style={{ 
-              userSelect: 'none', 
-              pointerEvents: (isDragging && isHorizontalSwipe) ? 'none' : 'auto' 
-            }}
+            className="relative min-w-full h-full"
           >
             <div className="absolute inset-0">
               <img
                 src={slide.image}
                 alt={slide.alt}
-                className="w-full h-full object-cover transition-opacity duration-1000 select-none"
+                className="w-full h-full object-cover transition-opacity duration-1000"
                 onError={(e) => handleImageError(slide, e)}
                 loading={index < 2 ? 'eager' : 'lazy'}
                 draggable="false"
                 style={{ 
                   ...(localImageErrors[slide.id] ? { background: '#222', color: 'red' } : {}),
-                  userSelect: 'none',
-                  pointerEvents: 'none'
                 }}
               />
               {(localImageErrors[slide.id]) && slide.isLocal && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-red-400 font-bold text-xl z-10 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-red-400 font-bold text-xl z-10">
                   Failed to load local image:<br />{slide.image}
                 </div>
               )}
@@ -317,7 +356,7 @@ const Slider = () => {
         ))}
       </div>
 
-      {/* Hide arrows on mobile and tablet */}
+      {/* Navigation buttons - hidden on touch devices for better UX */}
       <button
         onClick={prevSlide}
         disabled={isTransitioning}
@@ -371,18 +410,6 @@ const Slider = () => {
           style={{ width: `${((currentSlide + 1) / slides.length) * 100}%` }}
         />
       </div>
-
-      <button
-        onClick={() => {
-          console.log('Play/Pause clicked');
-        }}
-        className="absolute bottom-8 right-8 bg-black/40 backdrop-blur-sm hover:bg-black/60 text-white p-3 rounded-full transition-all duration-300 z-20"
-        aria-label="Pause autoplay"
-      >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-        </svg>
-      </button>
 
       <div className="absolute bottom-24 right-8 text-white/60 text-sm font-mono z-20">
         {String(currentSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
