@@ -1,14 +1,19 @@
-'use client'
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ReviewSection = () => {
     const [currentReview, setCurrentReview] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
-    const [startX, setStartX] = useState(0);
-    const [dragDistance, setDragDistance] = useState(0);
+    const [dragOffset, setDragOffset] = useState(0);
     const containerRef = useRef(null);
     const autoSlideRef = useRef(null);
+    
+    // Refs for touch handling
+    const startX = useRef(0);
+    const startY = useRef(0);
+    const currentX = useRef(0);
 
     const reviews = [
         {
@@ -63,7 +68,9 @@ const ReviewSection = () => {
     // Auto-slide every 5 seconds
     useEffect(() => {
         autoSlideRef.current = setInterval(() => {
-            nextReview();
+            if (!isDragging) {
+                nextReview();
+            }
         }, 5000);
 
         return () => {
@@ -71,7 +78,7 @@ const ReviewSection = () => {
                 clearInterval(autoSlideRef.current);
             }
         };
-    }, []);
+    }, [isDragging]);
 
     // Pause auto-slide on hover/drag
     const pauseAutoSlide = () => {
@@ -81,99 +88,164 @@ const ReviewSection = () => {
     };
 
     const resumeAutoSlide = () => {
-        if (autoSlideRef.current) {
-            clearInterval(autoSlideRef.current);
-        }
+        pauseAutoSlide();
         autoSlideRef.current = setInterval(() => {
-            nextReview();
+            if (!isDragging) {
+                nextReview();
+            }
         }, 5000);
     };
 
-    // Touch and mouse drag handlers
-    const handleDragStart = (e) => {
-        // Only start dragging if it's a horizontal swipe on the slider
-        setIsDragging(true);
+    // Touch start handler
+    const handleTouchStart = (e) => {
         pauseAutoSlide();
-        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        setStartX({ x: clientX, y: clientY });
-        setDragDistance(0);
+        setIsDragging(true);
+        startX.current = e.touches[0].clientX;
+        startY.current = e.touches[0].clientY;
+        currentX.current = startX.current;
+        setDragOffset(0);
     };
 
-    const handleDragMove = (e) => {
+    // Touch move handler
+    const handleTouchMove = (e) => {
         if (!isDragging) return;
         
-        e.preventDefault();
-        const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const clientY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        const distanceX = clientX - startX.x;
-        const distanceY = clientY - startX.y;
+        const touchX = e.touches[0].clientX;
+        const touchY = e.touches[0].clientY;
         
-        // Only set drag distance for horizontal movement
-        // If vertical movement is significant, it's probably a scroll attempt
-        const isHorizontalSwipe = Math.abs(distanceX) > Math.abs(distanceY);
+        // Calculate movement
+        const deltaX = touchX - currentX.current;
+        const deltaY = touchY - startY.current;
         
-        if (isHorizontalSwipe) {
-            setDragDistance(distanceX);
-        } else {
-            // If it's vertical movement, cancel dragging to allow scrolling
-            setIsDragging(false);
-            setDragDistance(0);
+        // Check if it's mostly horizontal movement
+        if (Math.abs(touchX - startX.current) > Math.abs(touchY - startY.current)) {
+            // It's horizontal movement - update drag offset
+            currentX.current = touchX;
+            setDragOffset(touchX - startX.current);
+            
+            // Prevent vertical scroll during horizontal drag
+            e.preventDefault();
         }
     };
 
-    const handleDragEnd = () => {
+    // Touch end handler
+    const handleTouchEnd = (e) => {
         if (!isDragging) return;
         
-        setIsDragging(false);
-        const threshold = 50;
+        const endX = e.changedTouches[0].clientX;
+        const deltaX = endX - startX.current;
+        const swipeThreshold = 50;
         
-        if (Math.abs(dragDistance) > threshold) {
-            if (dragDistance > 0) {
+        // Determine if it was a swipe
+        if (Math.abs(deltaX) > swipeThreshold) {
+            if (deltaX > 0) {
+                // Swipe right - go to previous review
+                prevReview();
+            } else {
+                // Swipe left - go to next review
+                nextReview();
+            }
+        }
+        
+        // Reset dragging state
+        setIsDragging(false);
+        setDragOffset(0);
+        setTimeout(resumeAutoSlide, 1000);
+    };
+
+    // Mouse handlers for desktop
+    const handleMouseDown = (e) => {
+        pauseAutoSlide();
+        setIsDragging(true);
+        startX.current = e.clientX;
+        currentX.current = startX.current;
+        setDragOffset(0);
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        
+        const mouseX = e.clientX;
+        const deltaX = mouseX - currentX.current;
+        
+        currentX.current = mouseX;
+        setDragOffset(mouseX - startX.current);
+    };
+
+    const handleMouseUp = (e) => {
+        if (!isDragging) return;
+        
+        const endX = e.clientX;
+        const deltaX = endX - startX.current;
+        const swipeThreshold = 80;
+        
+        if (Math.abs(deltaX) > swipeThreshold) {
+            if (deltaX > 0) {
                 prevReview();
             } else {
                 nextReview();
             }
         }
         
-        setDragDistance(0);
-        setTimeout(resumeAutoSlide, 3000); // Resume after 3 seconds
+        setIsDragging(false);
+        setDragOffset(0);
+        setTimeout(resumeAutoSlide, 1000);
     };
 
-    // Add event listeners for drag
+    // Handle mouse leave
+    const handleMouseLeave = () => {
+        if (isDragging) {
+            setIsDragging(false);
+            setDragOffset(0);
+            resumeAutoSlide();
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'ArrowLeft') prevReview();
+            if (e.key === 'ArrowRight') nextReview();
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [prevReview, nextReview]);
+
+    // Setup event listeners
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
 
-        const options = { passive: false };
+        // Touch events
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd);
+        container.addEventListener('touchcancel', handleTouchEnd);
+
+        // Mouse events
+        container.addEventListener('mousedown', handleMouseDown);
+        container.addEventListener('mouseleave', handleMouseLeave);
         
-        // Store references to functions for cleanup
-        const handleStart = (e) => handleDragStart(e);
-        const handleMove = (e) => handleDragMove(e);
-        const handleEnd = () => handleDragEnd();
+        // Global mouse handlers
+        const handleGlobalMouseMove = (e) => handleMouseMove(e);
+        const handleGlobalMouseUp = (e) => handleMouseUp(e);
         
-        container.addEventListener('mousedown', handleStart, options);
-        container.addEventListener('mousemove', handleMove, options);
-        container.addEventListener('mouseup', handleEnd, options);
-        container.addEventListener('mouseleave', handleEnd, options);
-        
-        container.addEventListener('touchstart', handleStart, options);
-        container.addEventListener('touchmove', handleMove, options);
-        container.addEventListener('touchend', handleEnd, options);
-        container.addEventListener('touchcancel', handleEnd, options);
+        window.addEventListener('mousemove', handleGlobalMouseMove);
+        window.addEventListener('mouseup', handleGlobalMouseUp);
 
         return () => {
-            container.removeEventListener('mousedown', handleStart);
-            container.removeEventListener('mousemove', handleMove);
-            container.removeEventListener('mouseup', handleEnd);
-            container.removeEventListener('mouseleave', handleEnd);
+            container.removeEventListener('touchstart', handleTouchStart);
+            container.removeEventListener('touchmove', handleTouchMove);
+            container.removeEventListener('touchend', handleTouchEnd);
+            container.removeEventListener('touchcancel', handleTouchEnd);
             
-            container.removeEventListener('touchstart', handleStart);
-            container.removeEventListener('touchmove', handleMove);
-            container.removeEventListener('touchend', handleEnd);
-            container.removeEventListener('touchcancel', handleEnd);
+            container.removeEventListener('mousedown', handleMouseDown);
+            container.removeEventListener('mouseleave', handleMouseLeave);
+            
+            window.removeEventListener('mousemove', handleGlobalMouseMove);
+            window.removeEventListener('mouseup', handleGlobalMouseUp);
         };
-    }, [isDragging, dragDistance, startX]);
+    }, [isDragging]);
 
     const renderStars = (rating) => {
         return (
@@ -215,13 +287,13 @@ const ReviewSection = () => {
                         className="relative rounded-xl overflow-hidden shadow-2xl mb-16 border border-gray-800"
                         ref={containerRef}
                         style={{ 
-                            cursor: isDragging ? 'grabbing' : 'grab',
-                            touchAction: 'pan-y pinch-zoom' // Allow vertical scrolling
+                            cursor: isDragging ? 'grabbing' : 'default',
+                            userSelect: 'none'
                         }}
                         onMouseEnter={pauseAutoSlide}
                         onMouseLeave={resumeAutoSlide}
                     >
-                        {/* Background Images - Brighter for dark theme */}
+                        {/* Background Images */}
                         <div className="absolute inset-0">
                             {blurImages.map((image, index) => (
                                 <div
@@ -233,12 +305,12 @@ const ReviewSection = () => {
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center',
                                         filter: 'brightness(0.7) contrast(1.1)',
-                                        transform: `translateX(${isDragging ? dragDistance : 0}px)`,
+                                        transform: `translateX(${isDragging ? dragOffset : 0}px)`,
                                         transition: isDragging ? 'none' : 'opacity 1000ms ease, transform 300ms ease'
                                     }}
                                 />
                             ))}
-                            {/* Dark overlay - Adjusted for black background */}
+                            {/* Dark overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent"></div>
                         </div>
                         
@@ -301,7 +373,6 @@ const ReviewSection = () => {
                             </div>
                         </div>
                     </div>
-
 
                     {/* Reviews List */}
                     <div className="space-y-8">
